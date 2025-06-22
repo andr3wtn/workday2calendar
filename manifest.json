@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "CourseProf RMP Preview",
+  "version": "1.0",
+  "description": "Show RateMyProfessors info when hovering over prof names.",
+  "permissions": ["activeTab", "scripting"],
+  "content_scripts": [
+    {
+      "matches": ["https://www.myworkday.com/wustl/d/task/*"],
+      "js": ["content.js"],
+      "css": ["style.css"]
+    }
+  ]
+}
