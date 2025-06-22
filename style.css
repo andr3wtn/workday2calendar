@@ -2,7 +2,12 @@
     position: absolute;
     background-color: #fafafa;
     border-radius: 5px;
-    border: 1px solid #999;
+    border: 2px solid #999;
     padding: 0.5rem;
-    z-index: 100;
+    z-index: 1000;
+    width: 170px;
+    height: auto;
+    color:#999; 
+    text-align:left; 
+    padding:10px 15px;
 }
