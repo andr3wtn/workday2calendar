@@ -16,6 +16,9 @@ function isValidProfessor(el) {
   // Skip if it starts with a course code like "CSE 131"
   if (/^[A-Z]{2,5} \d{3,4}/.test(name)) return false;
 
+  // Skip if contains digits
+  if (/\d/.test(name)) return false;
+
   // Keep if it includes a comma (e.g., "LastName, FirstName")
   return name.includes(',');
 }
