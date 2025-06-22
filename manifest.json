@@ -1,6 +1,6 @@
 {
-  "manifest_version": 3,
   "name": "CourseProf RMP Preview",
+  "manifest_version": 3,
   "version": "1.0",
   "description": "Show RateMyProfessors info when hovering over prof names on workday course searching pages.",
   "permissions": ["activeTab", "scripting"],
@@ -10,5 +10,18 @@
       "js": ["content.js"],
       "css": ["style.css"]
     }
-  ]
+  ],
+  "action": {
+    "default_icon": {
+      "16": "assets/icons/logo small.png",
+      "32": "assets/icons/logo small.png"
+    },
+    "default_title": "Workday RMP Preview"
+  },
+  "icons": {
+      "16": "assets/icons/logo small.png",
+      "32": "assets/icons/logo small.png",
+      "48": "assets/icons/logo small.png",
+      "128": "assets/icons/logo big.png"
+  }
 }
