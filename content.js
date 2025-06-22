@@ -27,14 +27,13 @@ const observer = new MutationObserver(() => {
         const fullName = professor.getAttribute("aria-label") || professor.innerText || professor.textContent;
         console.log("Hovered over" + fullName);
         // const info = await fetchRMPInfo(fullName);
-        // Example stub data until fetchRMPInfo is added
-        const info = {
-            score: "4.5",
-            subject: "Computer Science",
-            url: `https://www.ratemyprofessors.com/search/professors?q=${encodeURIComponent(fullName)}`
-        };
-        showPopup(professor, info);
-
+        // // Example stub data until fetchRMPInfo is added
+        // const info = {
+        //     score: "4.5",
+        //     subject: "Computer Science",
+        //     url: `https://www.ratemyprofessors.com/search/professors?q=${encodeURIComponent(fullName)}`
+        // };
+        showPopup();
     });
   }
 });
@@ -62,14 +61,14 @@ function fetchRMPInfo() {
 
 
 // Showing the pop-up window
-function showPopup(elem, info) {
+function showPopup() {
     const popup = document.createElement("div");
     popup.className = "rmp-popup";
-    popup.innerHTML = `
-    <strong>Rating: ${info.score || "N/A"}</strong><br>
-    Subject: ${info.subject || "Unknown"}<br>
-    <a href="${info.url}" target="_blank">View on RMP</a>
-  `;
+    console.log('pop up created');
+  //   popup.innerHTML = `
+  //   <strong>Rating: ${info.score || "N/A"}</strong><br>
+  //   Subject: ${info.subject || "Unknown"}<br>
+  //   <a href="${info.url}" target="_blank">View on RMP</a>
+  // `;
     document.body.appendChild(popup);
-    const rect = targetElem.getBoundingClientRect();
 }
