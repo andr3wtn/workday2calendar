@@ -3,7 +3,8 @@ console.log("CourseProf RMP Extension loaded!");
 
 // Const variables
 const SELECTOR = 'div.gwt-Label.WLRO.WEQO[data-automation-id="promptOption"]';
-const set = new WeakSet();
+let hideTimer = null;
+const TIME_OUT_TIME = 200;
 
 // Helper function to check if an element is a valid professor
 function isValidProfessor(el) {
@@ -12,68 +13,30 @@ function isValidProfessor(el) {
   // Skip empty or malformed text
   if (!name) return false;
 
-  // Skip if it starts with a department code like "AFAS 1105"
+  // Skip if it starts with a course code like "CSE 131"
   if (/^[A-Z]{2,5} \d{3,4}/.test(name)) return false;
 
   // Keep if it includes a comma (e.g., "Last, First")
   return name.includes(',');
 }
 
-// Helper function to bind events to a professor element
-function bindProfessorEvents(professor) {
-  if (professor.dataset.rmpBound === "true") return;
-  professor.dataset.rmpBound = "true";
+// When mouse enters *any* descendant of body, capture it if it matches SELECTOR
+document.body.addEventListener("mouseenter", e => {
+  const el = e.target;
+  if (el.matches(SELECTOR) && isValidProfessor(el)) {
+    clearTimeout(hideTimer);
+    const fullName = el.getAttribute("aria-label") || el.textContent;
+    showPopup(el, fullName);
+  }
+}, true);
 
-  // // DEBUG
-  // professor.style.border = "1px solid red";  
-
-  professor.addEventListener('mouseenter', () => {
-    const fullName = professor.getAttribute("aria-label") || professor.innerText || professor.textContent;
-    showPopup(professor, fullName);
-  });
-
-  professor.addEventListener('mouseleave', () => {
-    removePopup();
-  });
-}
-
-function processInitialElements() {
-  const professorElems = [...document.querySelectorAll(SELECTOR)].filter(isValidProfessor);
-  professorElems.forEach(bindProfessorEvents);
-}
-
-// Get Professor Names from the Website Page
-const observer = new MutationObserver((mutations) => {
-    let newProfessorCount = 0;
-
-    for (const mutation of mutations) {
-      for (const node of mutation.addedNodes) {
-        // Skip text nodes and non-element nodes
-        if (node.nodeType !== Node.ELEMENT_NODE) continue;
-        
-        // Check if the added node itself matches our selector
-        if (node.matches && node.matches(SELECTOR) && isValidProfessor(node)) {
-          bindProfessorEvents(node);
-          newProfessorCount++;
-        }
-        
-        // Check if any descendant nodes match our selector
-        if (node.querySelectorAll) {
-          const professorElems = [...node.querySelectorAll(SELECTOR)].filter(isValidProfessor);
-          professorElems.forEach(bindProfessorEvents);
-          newProfessorCount += professorElems.length;
-        }
-      }
-    }
-    
-});
-
-// Process initial elements
-processInitialElements();
-
-// Start observing for new elements
-observer.observe(document.body, { childList: true, subtree: true });
-
+// When mouse leaves a professor element, schedule popup removal
+document.body.addEventListener("mouseleave", e => {
+  const el = e.target;
+  if (el.matches(SELECTOR) && isValidProfessor(el)) {
+    hideTimer = setTimeout(removePopup, TIME_OUT_TIME);
+  }
+}, true);
 
 // Get RMP basic info from the website
 async function fetchRMPInfo(fullName) {
@@ -93,7 +56,6 @@ async function fetchRMPInfo(fullName) {
 }
 
 
-
 // Showing the pop-up window
 async function showPopup(targetElem, fullName) {
   const popup = document.createElement("div");
@@ -108,9 +70,13 @@ async function showPopup(targetElem, fullName) {
   popup.style.top = `${rect.top + window.scrollY}px`;
   popup.style.left = `${rect.right + window.scrollX + 10}px`;
 
+  popup.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+  popup.addEventListener('mouseleave', () => removePopup());
+
   // Fetch RMP info asynchronously
   const info = await fetchRMPInfo(fullName);
 
+  
   // Update popup content
   popup_inner.innerHTML = `
     <strong>Rating: ${info.score || "N/A"}</strong><br>
