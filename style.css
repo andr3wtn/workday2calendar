@@ -9,5 +9,10 @@
     height: auto;
     color:#999; 
     text-align:left; 
-    padding:10px 15px;
+    padding: 10px 15px;
+}
+
+.h1 {
+    color: black;
+    font-size: 1rem;
 }

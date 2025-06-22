@@ -16,7 +16,7 @@ function isValidProfessor(el) {
   // Skip if it starts with a course code like "CSE 131"
   if (/^[A-Z]{2,5} \d{3,4}/.test(name)) return false;
 
-  // Keep if it includes a comma (e.g., "Last, First")
+  // Keep if it includes a comma (e.g., "LastName, FirstName")
   return name.includes(',');
 }
 
@@ -49,7 +49,7 @@ async function fetchRMPInfo(fullName) {
     
   const info = {
       score: "4.5",
-      subject: "Computer Science",
+      would_take_again: 60,
       url: `https://www.ratemyprofessors.com/search/professors?q=${encodeURIComponent(fullName)}`
   };
   return info;
@@ -76,11 +76,11 @@ async function showPopup(targetElem, fullName) {
   // Fetch RMP info asynchronously
   const info = await fetchRMPInfo(fullName);
 
-  
-  // Update popup content
+  // Update popup <span> content
   popup_inner.innerHTML = `
+    <h2>${fullName || "N/A"}</h2><br>
     <strong>Rating: ${info.score || "N/A"}</strong><br>
-    Subject: ${info.subject || "Unknown"}<br>
+    <strong>Would take again: ${info.would_take_again+'%' || "Unknown"}</strong><br>
     <a href="${info.url}" target="_blank">View on RMP</a>
   `;
 }
