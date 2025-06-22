@@ -3,16 +3,18 @@
     background-color: #fafafa;
     border-radius: 5px;
     border: 2px solid #999;
-    padding: 0.5rem;
+    padding: 4px;
     z-index: 1000;
     width: 170px;
     height: auto;
-    color:#999; 
+    color:#505050; 
     text-align:left; 
     padding: 10px 15px;
+    line-height: 1.3;
+    font-size: 0.9rem;
 }
 
-.h1 {
-    color: black;
-    font-size: 1rem;
+.rmp-popup h2 {
+    font-size: 1.2rem; 
+    margin: 0 0 0.5rem 0;
 }

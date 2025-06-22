@@ -47,8 +47,10 @@ async function fetchRMPInfo(fullName) {
   // Example stub data until fetchRMPInfo is added
   await new Promise(resolve => setTimeout(resolve, 2000));
     
+  let first_last_name = convertToFirstLast(fullName);
   const info = {
-      score: "4.5",
+      name: first_last_name,
+      rating: "4.5",
       would_take_again: 60,
       url: `https://www.ratemyprofessors.com/search/professors?q=${encodeURIComponent(fullName)}`
   };
@@ -78,14 +80,30 @@ async function showPopup(targetElem, fullName) {
 
   // Update popup <span> content
   popup_inner.innerHTML = `
-    <h2>${fullName || "N/A"}</h2><br>
-    <strong>Rating: ${info.score || "N/A"}</strong><br>
-    <strong>Would take again: ${info.would_take_again+'%' || "Unknown"}</strong><br>
-    <a href="${info.url}" target="_blank">View on RMP</a>
+    <h2>
+      <a href="${info.url}" target="_blank">${info.name}</a>
+    </h2>
+    <strong>Rating: ${info.rating}</strong><br>
+    <strong>Would take again: ${info.would_take_again}%</strong>
   `;
 }
 
 // Removing the pop-up window
 function removePopup() {
   document.querySelectorAll(".rmp-popup").forEach(e => e.remove());
+}
+
+// Converts "lastName, firstName" to "firstName lastName"
+function convertToFirstLast(fullName) {
+  if (typeof fullName !== 'string') return '';
+
+  const parts = fullName.split(',');
+
+  // If there isn’t exactly one comma, just trim and return as-is
+  if (parts.length !== 2) return fullName.trim();
+  
+  const lastName  = parts[0].trim();
+  const firstName = parts[1].trim();
+
+  return `${firstName} ${lastName}`;
 }
