@@ -1,53 +1,78 @@
 // Debug line
 console.log("CourseProf RMP Extension loaded!");
 
+// Const variables
+const SELECTOR = 'div.gwt-Label.WLRO.WEQO[data-automation-id="promptOption"]';
+const set = new WeakSet();
 
-// Get Professor Names from the Website Page
-const observer = new MutationObserver(() => {
-  const professorElems = [...document.querySelectorAll('div.gwt-Label.WLRO.WEQO[data-automation-id="promptOption"]')]
-    .filter(el => {
-      const name = el.getAttribute("aria-label") || el.innerText || el.textContent;
-      
-      // Skip empty or malformed text
-      if (!name) return false;
+// Helper function to check if an element is a valid professor
+function isValidProfessor(el) {
+  const name = el.getAttribute("aria-label") || el.innerText || el.textContent;
+  
+  // Skip empty or malformed text
+  if (!name) return false;
 
-      // Skip if it starts with a department code like "AFAS 1105"
-      if (/^[A-Z]{2,5} \d{3,4}/.test(name)) return false;
+  // Skip if it starts with a department code like "AFAS 1105"
+  if (/^[A-Z]{2,5} \d{3,4}/.test(name)) return false;
 
-      // Keep if it includes a comma (e.g., "Last, First")
-      return name.includes(',');
+  // Keep if it includes a comma (e.g., "Last, First")
+  return name.includes(',');
+}
+
+// Helper function to bind events to a professor element
+function bindProfessorEvents(professor) {
+  if (professor.dataset.rmpBound === "true") return;
+  professor.dataset.rmpBound = "true";
+
+  // // DEBUG
+  // professor.style.border = "1px solid red";  
+
+  professor.addEventListener('mouseenter', () => {
+    const fullName = professor.getAttribute("aria-label") || professor.innerText || professor.textContent;
+    showPopup(professor, fullName);
   });
 
-  console.log("Number of professor elements found:", professorElems.length);
+  professor.addEventListener('mouseleave', () => {
+    removePopup();
+  });
+}
 
-  for (const professor of professorElems) {
-    if (professor.dataset.rmpBound === "true") continue;
-    professor.dataset.rmpBound = "true";
+function processInitialElements() {
+  const professorElems = [...document.querySelectorAll(SELECTOR)].filter(isValidProfessor);
+  professorElems.forEach(bindProfessorEvents);
+}
 
-    professor.addEventListener('mouseenter', () => {
-      const fullName = professor.getAttribute("aria-label") || professor.innerText || professor.textContent;
-      showPopup(professor, fullName);
-    });
+// Get Professor Names from the Website Page
+const observer = new MutationObserver((mutations) => {
+    let newProfessorCount = 0;
 
-    professor.addEventListener('mouseleave', () => {
-      removePopup();
-    });
-  }
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        // Skip text nodes and non-element nodes
+        if (node.nodeType !== Node.ELEMENT_NODE) continue;
+        
+        // Check if the added node itself matches our selector
+        if (node.matches && node.matches(SELECTOR) && isValidProfessor(node)) {
+          bindProfessorEvents(node);
+          newProfessorCount++;
+        }
+        
+        // Check if any descendant nodes match our selector
+        if (node.querySelectorAll) {
+          const professorElems = [...node.querySelectorAll(SELECTOR)].filter(isValidProfessor);
+          professorElems.forEach(bindProfessorEvents);
+          newProfessorCount += professorElems.length;
+        }
+      }
+    }
+    
 });
 
+// Process initial elements
+processInitialElements();
+
+// Start observing for new elements
 observer.observe(document.body, { childList: true, subtree: true });
-
-// As website loads, new professor names aren't detected automatically
-// // DEBUG
-// professorElems.forEach(el => el.style.border = "1px solid red");
-
-// // Printing out professor names (for DEBUGGING)
-// for (const professor of professorElems) {
-//     const name = professor.getAttribute("aria-label") || professor.innerText || professor.textContent;
-//     console.log(name);
-// }
-
-
 
 
 // Get RMP basic info from the website
@@ -77,7 +102,7 @@ async function showPopup(targetElem, fullName) {
 
   const popup_inner = document.createElement("span");
   popup_inner.innerHTML = "Loading...";
-popup.appendChild(popup_inner);
+  popup.appendChild(popup_inner);
 
   const rect = targetElem.getBoundingClientRect();
   popup.style.top = `${rect.top + window.scrollY}px`;
@@ -92,8 +117,6 @@ popup.appendChild(popup_inner);
     Subject: ${info.subject || "Unknown"}<br>
     <a href="${info.url}" target="_blank">View on RMP</a>
   `;
-
-
 }
 
 // Removing the pop-up window
