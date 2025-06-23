@@ -90,7 +90,7 @@ async function fetchRMPInfo(fullName) {
 
     //if no exact matches
     if (!bestMatch) {
-      console.warn("No exact matches found. Searching for last name only");
+      console.log("No exact matches found. Searching for last name only");
       const lastName = parts[parts.length - 1]; // Ignores middle name
       bestMatch = teacherEntries.find(
         entry => entry.lastName.toLowerCase() === lastName
@@ -98,7 +98,7 @@ async function fetchRMPInfo(fullName) {
     }
 
     if (!bestMatch){
-      console.warn("No best matches");
+      console.log("No best matches");
     }
 
     return {
@@ -110,7 +110,7 @@ async function fetchRMPInfo(fullName) {
     };
 
   } catch (err) {
-    console.error("RMP fetch error:", err);
+    console.log("RMP fetch error:", err);
     return {
       name: firstLast,
       rating: "N/A",
