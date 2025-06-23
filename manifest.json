@@ -4,6 +4,10 @@
   "version": "1.0",
   "description": "Show RateMyProfessors info when hovering over prof names on workday course searching pages.",
   "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["https://www.ratemyprofessors.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": ["https://www.myworkday.com/wustl/d/*"],

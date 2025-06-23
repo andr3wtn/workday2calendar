@@ -43,21 +43,82 @@ document.body.addEventListener("mouseleave", e => {
 
 // Get RMP basic info from the website
 async function fetchRMPInfo(fullName) {
-  // TO DO:
-  // Fetch info from RMP
+  const firstLast = convertToFirstLast(fullName);
+  const searchUrl = `https://www.ratemyprofessors.com/search/professors/1147?q=${encodeURIComponent(firstLast)}`;
+  console.log("Matched teacher entries:", searchUrl);
   
-  // Delete after completed
-  // Example stub data until fetchRMPInfo is added
-  await new Promise(resolve => setTimeout(resolve, 2000));
-    
-  let first_last_name = convertToFirstLast(fullName);
-  const info = {
-      name: first_last_name,
-      rating: "4.5",
-      would_take_again: 60,
-      url: `https://www.ratemyprofessors.com/search/professors?q=${encodeURIComponent(fullName)}`
-  };
-  return info;
+  try {
+  const response = await chrome.runtime.sendMessage({
+      action: "fetchRMP",
+      url: searchUrl
+    });
+  
+  if (!response.success) throw new Error(response.error);
+  const html = await response.html;
+
+  const relayMarker = "window.__RELAY_STORE__ = ";
+  const processMarker = "window.process = {}";
+
+  const startIdx = html.indexOf(relayMarker);
+  const endIdx = html.indexOf(processMarker);
+  if (startIdx === -1 || endIdx === -1) throw new Error("Relay store not found");
+
+  let jsonText = html.substring(startIdx + relayMarker.length, endIdx).trim();
+  jsonText = jsonText.replace(/;\s*$/, "");
+
+  const relayData = JSON.parse(jsonText);
+
+  // Extracting __typename = 'Teacher' from RMP
+  const teacherEntries = Object.values(relayData).filter(entry => 
+      entry.__typename === "Teacher" &&
+      entry.firstName &&
+      entry.lastName &&
+      entry.legacyId &&
+      entry.school?.__ref === "U2Nob29sLTExNDc=" // WashU ID can be changed in future for all universities
+    );
+  
+  console.log("Matched teacher entries:", teacherEntries);
+
+  if (teacherEntries.length === 0) throw new Error("No valid professor found");
+    const fullNameLower = firstLast.toLowerCase();
+    const parts = fullNameLower.split(' ');
+
+    // Try to find exact match first
+    let bestMatch = teacherEntries.find(
+      entry => `${entry.firstName} ${entry.lastName}`.toLowerCase() === fullNameLower
+    );
+
+    //if no exact matches
+    if (!bestMatch) {
+      console.warn("No exact matches found. Searching for last name only");
+      const lastName = parts[parts.length - 1]; // Ignores middle name
+      bestMatch = teacherEntries.find(
+        entry => entry.lastName.toLowerCase() === lastName
+      );
+    }
+
+    if (!bestMatch){
+      console.warn("No best matches");
+    }
+
+    return {
+      name: `${bestMatch.firstName} ${bestMatch.lastName}`,
+      rating: bestMatch.avgRating || "N/A",
+      would_take_again: bestMatch.wouldTakeAgainPercent >= 0 ? Math.ceil(bestMatch.wouldTakeAgainPercent) : "N/A",
+      difficulty: bestMatch.avgDifficulty || "N/A",
+      url: `https://www.ratemyprofessors.com/professor/${bestMatch.legacyId}`
+    };
+
+  } catch (err) {
+    console.error("RMP fetch error:", err);
+    return {
+      name: firstLast,
+      rating: "N/A",
+      would_take_again: "N/A",
+      difficulty: "N/A",
+      url: `https://www.ratemyprofessors.com/search/professors/1147?q=${encodeURIComponent(firstLast)}`
+    };
+  }
 }
 
 
@@ -88,6 +149,7 @@ async function showPopup(targetElem, fullName) {
     </h2>
     <strong>Rating: ${info.rating}</strong><br>
     <strong>Would take again: ${info.would_take_again}%</strong>
+    <strong>Level of Difficulty: ${info.difficulty}</strong>
   `;
 }
 
