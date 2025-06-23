@@ -6,6 +6,7 @@ Download it through Google Chrome's webstore.
 
 ## User's Guide
 Once installed (see below for more), the extention should automatically start working once you're on Workday. Hover your mouse over the professor you want to see more about and a window will popup. Click on the name to be directed to the RMP website.
+![Demo of extension](assets/demo.gif)
 
 ## Installation
 
