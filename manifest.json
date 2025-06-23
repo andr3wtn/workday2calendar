@@ -1,5 +1,5 @@
 {
-  "name": "CourseProf RMP Preview",
+  "name": "Workday RMP Helper",
   "manifest_version": 3,
   "version": "1.0",
   "description": "Show RateMyProfessors info when hovering over prof names on workday course searching pages.",
