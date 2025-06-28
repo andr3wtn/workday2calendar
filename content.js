@@ -1,10 +1,11 @@
 // Debug line
 console.log("CourseProf RMP Extension loaded!");
 
-// Const variables
+// Global Variables
 const SELECTOR = 'div.gwt-Label.WLRO.WEQO[data-automation-id="promptOption"]';
 let hideTimer = null;
 const TIME_OUT_TIME = 200;
+let currentPopupAnchor = null;
 
 // Helper function to check if an element is a valid professor
 function isValidProfessor(el) {
@@ -28,8 +29,12 @@ document.body.addEventListener("mouseenter", e => {
   const el = e.target;
   if (el.matches(SELECTOR) && isValidProfessor(el)) {
     clearTimeout(hideTimer);
-    const fullName = el.getAttribute("aria-label") || el.textContent;
-    showPopup(el, fullName);
+    const fullName = el.getAttribute("aria-label") || el.innerHTML || el.textContent;
+    if (currentPopupAnchor !== el) {
+      removePopup();  // remove any existing one immediately
+      currentPopupAnchor = el;
+      showPopup(el, fullName);
+    }
   }
 }, true);
 
@@ -124,6 +129,7 @@ async function fetchRMPInfo(fullName) {
 
 // Showing the pop-up window
 async function showPopup(targetElem, fullName) {
+
   const popup = document.createElement("div");
   popup.className = "rmp-popup";
   document.body.appendChild(popup);
@@ -155,6 +161,7 @@ async function showPopup(targetElem, fullName) {
 
 // Removing the pop-up window
 function removePopup() {
+  currentPopupAnchor = null;
   document.querySelectorAll(".rmp-popup").forEach(e => e.remove());
 }
 
