@@ -1,8 +1,8 @@
 // Debug line
-console.log("CourseProf RMP Extension loaded!");
+console.log("Workday Helper Extension loaded!");
 
 // Global Variables
-const SELECTOR = 'div.gwt-Label.WLRO.WEQO[data-automation-id="promptOption"]';
+const SELECTOR = 'div.gwt-Label[data-automation-id="promptOption"][aria-label*=","]';
 let hideTimer = null;
 const TIME_OUT_TIME = 200;
 let currentPopupAnchor = null;
@@ -26,8 +26,10 @@ function isValidProfessor(el) {
 
 // When mouse enters *any* descendant of body, capture it if it matches SELECTOR
 document.body.addEventListener("mouseenter", e => {
+  console.log("chechking for professor name"); // DEBUGGING LINE; DELETE BEFORE PUBLISH
   const el = e.target;
   if (el.matches(SELECTOR) && isValidProfessor(el)) {
+    console.log("hovered over professor name"); // DEBUGGING LINE; DELETE BEFORE PUBLISH
     clearTimeout(hideTimer);
     const fullName = el.getAttribute("aria-label") || el.innerHTML || el.textContent;
     if (currentPopupAnchor !== el) {
@@ -129,6 +131,8 @@ async function fetchRMPInfo(fullName) {
 
 // Showing the pop-up window
 async function showPopup(targetElem, fullName) {
+
+  console.log("showing popup"); // DEBUGGING LINE; DELETE BEFORE PUBLISH
 
   const popup = document.createElement("div");
   popup.className = "rmp-popup";
