@@ -120,9 +120,9 @@ async function fetchRMPInfo(fullName) {
     console.log("RMP fetch error:", err);
     return {
       name: firstLast,
-      rating: "N/A",
-      would_take_again: "N/A",
-      difficulty: "N/A",
+      // rating: "N/A",
+      // would_take_again: "N/A",
+      // difficulty: "N/A",
       url: `https://www.ratemyprofessors.com/search/professors/1147?q=${encodeURIComponent(firstLast)}`
     };
   }
@@ -152,8 +152,8 @@ async function showPopup(targetElem, fullName) {
   // Fetch RMP info asynchronously
   const info = await fetchRMPInfo(fullName);
 
-  // Update popup <span> content
-  popup_inner.innerHTML = `
+  if (info.rating) {
+    popup_inner.innerHTML = `
     <h2>
       <a href="${info.url}" target="_blank">${info.name}</a>
     </h2>
@@ -161,6 +161,14 @@ async function showPopup(targetElem, fullName) {
     <strong>Would take again: ${info.would_take_again}%</strong>
     <strong>Level of Difficulty: ${info.difficulty}</strong>
   `;
+  } else {
+    popup_inner.innerHTML = `
+    <h2>
+      <a href="${info.url}" target="_blank">${info.name}</a>
+    </h2>
+    <strong>No results found. Tap the link above to check manually. \u2B06\uFE0F</strong>
+  `;
+  }
 }
 
 // Removing the pop-up window
