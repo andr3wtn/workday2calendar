@@ -166,7 +166,7 @@ async function showPopup(targetElem, fullName) {
     <h2>
       <a href="${info.url}" target="_blank">${info.name}</a>
     </h2>
-    <strong>No results found. Tap the link above to check manually. \u2B06\uFE0F</strong>
+    <strong>No results found. Tap the link to check manually. \u2B06\uFE0F</strong>
   `;
   }
 }
