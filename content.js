@@ -24,6 +24,11 @@ function isValidProfessor(el) {
   return name.includes(',');
 }
 
+// Helper functions to approximate name
+function normalizeName(name) {
+  return name.toLowerCase().replace(/\./g, '').trim();
+}
+
 // When mouse enters *any* descendant of body, capture it if it matches SELECTOR
 document.body.addEventListener("mouseenter", e => {
   console.log("chechking for professor name"); // DEBUGGING LINE; DELETE BEFORE PUBLISH
@@ -104,6 +109,34 @@ async function fetchRMPInfo(fullName) {
       );
     }
 
+    if (!bestMatch) {
+      console.log("No exact matches found. Trying fuzzy matching");
+
+      function simpleCharDiff(a, b) {
+        a = normalizeName(a);
+        b = normalizeName(b);
+        let errors = 0;
+        const len = Math.min(a.length, b.length);
+        for (let i = 0; i < len; i++) {
+          if (a[i] !== b[i]) errors++;
+        }
+        return errors;
+      }
+
+      const targetFirst = normalizeName(parts[0]);
+      const targetLast = normalizeName(parts[parts.length - 1]);
+
+      bestMatch = teacherEntries.find(entry => {
+        const entryFirst = normalizeName(entry.firstName);
+        const entryLast = normalizeName(entry.lastName);
+        return (
+          simpleCharDiff(entryFirst, targetFirst) <= 1 &&
+          simpleCharDiff(entryLast, targetLast) <= 1
+        );
+      });
+    }
+
+        
     if (!bestMatch){
       console.log("No best matches");
     }
