@@ -9,7 +9,14 @@ Once installed (see below for more), the extention should automatically start wo
 ![Demo of extension](assets/demo.gif)
 
 ## Installation
+### Google Extension Webstore
+1. Go to [Workday RMP Helper's page on Google Web Store](https://chromewebstore.google.com/detail/ccfbpchmkcnhfkbidiahfjbkgjhokmok?utm_source=item-share-cb)
+2. Click "Add to Chrome"
+3. You're all set!
+   
+OR
 
+### Git Clone
 1. Clone or download this repository.
 
 2. Go to chrome://extensions/ in your Chrome browser.
