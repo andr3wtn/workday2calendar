@@ -4,6 +4,7 @@
   "version": "1.0.01",
   "description": "Show RateMyProfessors info when hovering over prof names on workday course searching pages.",
   "host_permissions": ["https://www.ratemyprofessors.com/*"],
+  "permissions": ["storage"],
   "background": {
     "service_worker": "background.js"
   },
@@ -15,6 +16,7 @@
     }
   ],
   "action": {
+    "default_popup":"popup.html",
     "default_icon": {
       "16": "assets/icons/logo small.png",
       "32": "assets/icons/logo small.png"

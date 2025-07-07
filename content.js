@@ -169,6 +169,40 @@ async function showPopup(targetElem, fullName) {
 
   const popup = document.createElement("div");
   popup.className = "rmp-popup";
+
+  // Fetch saved settings for theme and color
+  chrome.storage.sync.get(["theme", "primaryColor", "textColor"], (settings) => {
+    let bgColor = "#ffffff";
+    let textColor = "#000000";
+
+    switch (settings.theme) {
+      case "dark":
+        bgColor = "#222";
+        textColor = "#fff";
+        break;
+      case "blue":
+        bgColor = "#d0e8ff";
+        textColor = "#000";
+        break;
+      case "custom":
+        bgColor = settings.primaryColor || "#ffffff";
+        textColor = settings.textColor || "#000000";
+        break;
+      case "light":
+      default:
+        bgColor = "#ffffff";
+        textColor = "#000000";
+    }
+
+    popup.style.backgroundColor = bgColor;
+    popup.style.color = textColor;
+    popup.style.border = "1px solid #ccc";
+    popup.style.padding = "10px";
+    popup.style.borderRadius = "8px";
+    popup.style.maxWidth = "250px";
+    popup.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
+  });
+
   document.body.appendChild(popup);
 
   const popup_inner = document.createElement("span");
