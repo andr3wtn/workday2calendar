@@ -1,0 +1,47 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 270px;
+    background-color: #e0e0e0;
+    box-sizing: border-box;
+    font-family: sans-serif;
+}
+
+.container, .options-container {
+    margin: 6px;
+    padding: 12px;
+    background-color: #ffffff;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+label {
+    display: block;
+    margin-top: 10px;
+}
+
+input[type="color"], input[type="checkbox"] {
+    margin-top: 5px;
+}
+
+button {
+    margin-top: 15px;
+    width: 100%;
+    padding: 6px;
+    border-radius: 6px;
+    border: 1px solid #aaa;
+    background-color: #eee;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #ddd;
+}
+
+h3, h4 {
+    margin-top: 0;
+}
+
+.options-container {
+    display: none;
+}
