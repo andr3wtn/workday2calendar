@@ -7,18 +7,17 @@
       margin: 0;
       padding: 0;
       width: 270px;
-      height: auto;
       background-color: #e0e0e0;
       box-sizing: border-box;
+      font-family: sans-serif;
     }
 
-    .container {
+    .container, .options-container {
       margin: 6px;
       padding: 12px;
       background-color: #ffffff;
       border-radius: 6px;
       box-sizing: border-box;
-      color: #000000; /* default text color */
     }
 
     label {
@@ -26,7 +25,7 @@
       margin-top: 10px;
     }
 
-    input[type="color"] {
+    input[type="color"], input[type="checkbox"] {
       margin-top: 5px;
     }
 
@@ -44,12 +43,17 @@
       background-color: #ddd;
     }
 
-    h3 {
+    h3, h4 {
       margin-top: 0;
+    }
+
+    .options-container {
+      display: none;
     }
   </style>
 </head>
 <body>
+  <!-- MAIN SETTINGS VIEW -->
   <div class="container">
     <h3>Customize Theme</h3>
 
@@ -63,17 +67,29 @@
     </label>
 
     <label id="colorLabel" style="display:none;">
-      Custom Background Color:
+      Custom Background:
       <input type="color" id="primaryColor">
     </label>
 
     <label id="textColorLabel" style="display:none;">
-      Custom Text Color:
+      Custom Text:
       <input type="color" id="textColor">
     </label>
 
     <button id="saveBtn">Save</button>
     <button id="openOptions">More Settings</button>
+  </div>
+
+  <!-- SECONDARY OPTIONS VIEW -->
+  <div class="options-container">
+    <h4>More Settings</h4>
+
+    <label>
+      Example Option:
+      <input type="checkbox" id="exampleOption">
+    </label>
+
+    <button id="backBtn">Back</button>
   </div>
 
   <script src="popup.js"></script>

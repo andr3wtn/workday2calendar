@@ -10,22 +10,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const textColorLabel = document.getElementById("textColorLabel");
   const saveBtn = document.getElementById("saveBtn");
   const openOptions = document.getElementById("openOptions");
-  const container = document.querySelector(".container");
+  const backBtn = document.getElementById("backBtn");
 
+  const mainContainer = document.querySelector(".container");
+  const optionsContainer = document.querySelector(".options-container");
+
+  // Load saved settings
   chrome.storage.sync.get(["theme", "primaryColor", "textColor"], (data) => {
     console.log("[Popup] Loaded settings:", data);
 
-    if (data.theme) {
-      theme.value = data.theme;
-    }
-
-    if (data.primaryColor) {
-      primaryColor.value = data.primaryColor;
-    }
-
-    if (data.textColor) {
-      textColor.value = data.textColor;
-    }
+    if (data.theme) theme.value = data.theme;
+    if (data.primaryColor) primaryColor.value = data.primaryColor;
+    if (data.textColor) textColor.value = data.textColor;
 
     updateBackground(theme.value, primaryColor.value, textColor.value);
 
@@ -58,14 +54,18 @@ document.addEventListener("DOMContentLoaded", () => {
         fgColor = "#000000";
     }
 
-    container.style.backgroundColor = bgColor;
-    container.style.color = fgColor;
-
-    container.querySelectorAll("label, select, input, button").forEach(el => {
-      el.style.color = fgColor;
+    // Apply styles to both views
+    const views = document.querySelectorAll(".container, .options-container");
+    views.forEach(section => {
+      section.style.backgroundColor = bgColor;
+      section.style.color = fgColor;
+      section.querySelectorAll("label, select, input, button").forEach(el => {
+        el.style.color = fgColor;
+      });
     });
   }
 
+  // Handle theme selection
   theme.addEventListener("change", () => {
     const selectedTheme = theme.value;
     const selectedColor = primaryColor.value;
@@ -78,10 +78,11 @@ document.addEventListener("DOMContentLoaded", () => {
     updateBackground(selectedTheme, selectedColor, selectedTextColor);
 
     chrome.storage.sync.set({ theme: selectedTheme }, () => {
-      console.log("[Popup] Theme updated in storage");
+      console.log("[Popup] Theme saved");
     });
   });
 
+  // Handle background color input
   primaryColor.addEventListener("input", () => {
     const color = primaryColor.value;
     if (theme.value === "custom") {
@@ -92,6 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Handle text color input
   textColor.addEventListener("input", () => {
     const color = textColor.value;
     if (theme.value === "custom") {
@@ -102,6 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Save button click
   saveBtn.addEventListener("click", () => {
     chrome.storage.sync.set({
       theme: theme.value,
@@ -115,7 +118,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // Switch to More Settings view
   openOptions.addEventListener("click", () => {
-    chrome.runtime.openOptionsPage();
+    mainContainer.style.display = "none";
+    optionsContainer.style.display = "block";
+  });
+
+  // Back to main view
+  backBtn.addEventListener("click", () => {
+    optionsContainer.style.display = "none";
+    mainContainer.style.display = "block";
   });
 });
