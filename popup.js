@@ -84,9 +84,14 @@ document.addEventListener("DOMContentLoaded", () => {
     views.forEach(section => {
       section.style.backgroundColor = bgColor;
       section.style.color = fgColor;
-      section.querySelectorAll("label, select, input, button").forEach(el => {
+      section.querySelectorAll("label, input, button").forEach(el => {
         el.style.color = fgColor;
       });
+
+      section.querySelectorAll("select").forEach(select => {
+      select.style.color = "#000";
+      }); 
+
     });
   }
 
