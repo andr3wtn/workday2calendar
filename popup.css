@@ -1,0 +1,79 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 270px;
+    background-color: #e0e0e0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", sans-serif;
+}
+
+.container, .options-container {
+    padding: 12px;
+    background-color: #ffffff;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+label {
+    display: block;
+
+}
+
+input[type="color"], input[type="checkbox"] {
+    margin-top: 5px;
+}
+
+.button-container {
+    text-align: center;
+}
+
+button {
+    margin: 15px auto 0;
+    width: 80%;
+    padding: 6px;
+    border-radius: 6px;
+    border: 1px solid #aaa;
+    background-color: rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+h3, h4 {
+    margin-top: 0;
+}
+
+.options-container {
+    display: none;
+}
+
+.dropdown-checkbox {
+    display: flex;
+    align-items: center;
+}
+
+.form-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+  margin-top: 10px;
+}
+
+.form-row label {
+  min-width: 70px;
+  font-weight: 500;
+}
+
+#dropdown-content label {
+    display: flex;
+    align-items: center;
+    margin: 0;
+}

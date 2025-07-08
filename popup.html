@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>RMP Extension Settings</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body class="container">
+    <!-- MAIN SETTINGS VIEW -->
+    <div class="container">
+      <section>
+        <h3>Automation Tools</h3>
+
+        <div class="automation-panel">
+          <div>
+            <div class="form-row">
+              <label for="semester">Semester:</label>
+              <select id="semester">
+              </select>
+            </div>
+            <div class="dropdown-checkbox form-row">
+              <label for="academic-level">Academic Level:</label>
+              <div id="dropdown-content" class="dropdown-content">
+                <label>
+                  <input type="checkbox" value="Undergraduate">
+                   Undergraduate
+                </label>
+                <label>
+                  <input type="checkbox" value="Graduate">
+                   Graduate
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="button-container">
+            <button type="button" id="runButton">Run</button>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h3>Customize Theme</h3>
+
+        <label>Color Scheme:
+          <select id="theme">
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+            <option value="blue">Blue</option>
+            <option value="custom">Custom</option>
+          </select>
+        </label>
+
+        <label id="colorLabel" style="display:none;">
+          Custom Background:
+          <input type="color" id="primaryColor">
+        </label>
+
+        <label id="textColorLabel" style="display:none;">
+          Custom Text:
+          <input type="color" id="textColor">
+        </label>
+
+        <div class="button-container">
+          <button type="button" id="saveBtn">Save</button>
+          <button type="button" id="openOptions">More Settings</button>
+        </div>
+      </section>
+
+    </div>
+
+    <div class="options-container">
+      <h4>More Settings</h4>
+
+      <label>
+        Example Option:
+        <input type="checkbox" id="exampleOption">
+      </label>
+
+      <button type="button" id="backBtn">Back</button>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
