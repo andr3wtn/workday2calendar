@@ -1,7 +1,31 @@
-console.log("📦 popup.js loaded");
+console.log("popup.js loaded");
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("[Popup] DOM fully loaded");
+
+  populateSemesterSelect();
+
+  chrome.storage.sync.get(["lastUsedSemester", "lastUsedAcademicLevels"], (data) => {
+    const { lastUsedSemester, lastUsedAcademicLevels } = data;
+
+    if (lastUsedSemester && lastUsedAcademicLevels) {
+      const semesterSelect = document.querySelector("#semester");
+
+      for (let option of semesterSelect.options) {
+        if (option.value === lastUsedSemester || option.textContent === lastUsedSemester) {
+          semesterSelect.value = option.value;
+          break;
+        }
+      }
+
+      if (Array.isArray(lastUsedAcademicLevels)) {
+        const checkboxes = document.querySelectorAll("#dropdown-content input[type=checkbox]");
+        checkboxes.forEach(checkbox => {
+          checkbox.checked = lastUsedAcademicLevels.includes(checkbox.value);
+        });
+      }
+    }
+  });
 
   const theme = document.getElementById("theme");
   const primaryColor = document.getElementById("primaryColor");
@@ -11,6 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveBtn = document.getElementById("saveBtn");
   const openOptions = document.getElementById("openOptions");
   const backBtn = document.getElementById("backBtn");
+  const runBtn = document.querySelector("#runButton");
 
   const mainContainer = document.querySelector(".container");
   const optionsContainer = document.querySelector(".options-container");
@@ -129,4 +154,55 @@ document.addEventListener("DOMContentLoaded", () => {
     optionsContainer.style.display = "none";
     mainContainer.style.display = "block";
   });
+
+  // Run Automation
+  runBtn.addEventListener("click", () => {
+    const semesterSelect = document.querySelector("#semester");
+    const selectedOption = semesterSelect.selectedOptions[0];
+    const season = selectedOption.dataset.season;
+    const year = selectedOption.dataset.year;
+
+    const checkboxes = document.querySelectorAll("#dropdown-content input[type=checkbox]");
+    const academicLevels = Array.from(checkboxes)
+      .filter(checkbox => checkbox.checked)
+      .map(checkbox => checkbox.value);
+
+    if (academicLevels.length == 0) {
+      alert('Please select at least one academic level!');
+    }
+
+    chrome.storage.sync.set({
+      lastUsedSemester: `${season} ${year}`,
+      lastUsedAcademicLevels: academicLevels
+    }, () => { console.log('Last used settings saved.')});
+
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, {
+        type: 'RUN_AUTOMATION',
+        payload: { season, year, academicLevels }
+      });
+    });
+  });
 });
+
+
+function populateSemesterSelect() {
+  const semesterSelect = document.querySelector('#semester');
+
+  const currentYear = new Date().getFullYear();;
+  const seasons = ['Spring', 'Fall'];
+
+  for (let i = 0; i <= 1; i++) { // Populate <select> tag with <options>: "Fall 2025", "Spring 2026", "Fall 2026", "Spring 2027", etc.
+    for (let season of seasons) {
+      let year = currentYear + i;
+      const option = document.createElement('option');
+      option.value = `${season} ${year}`;
+      option.textContent = `${season} ${year}`;
+      option.dataset.season = season;
+      option.dataset.year = year; 
+      semesterSelect.appendChild(option);
+    }
+  }
+}
+
+

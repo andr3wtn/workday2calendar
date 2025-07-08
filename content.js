@@ -193,14 +193,8 @@ async function showPopup(targetElem, fullName) {
         bgColor = "#ffffff";
         textColor = "#000000";
     }
-
     popup.style.backgroundColor = bgColor;
     popup.style.color = textColor;
-    popup.style.border = "1px solid #ccc";
-    popup.style.padding = "10px";
-    popup.style.borderRadius = "8px";
-    popup.style.maxWidth = "250px";
-    popup.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
   });
 
   document.body.appendChild(popup);
@@ -257,4 +251,117 @@ function convertToFirstLast(fullName) {
   const firstName = parts[1].trim();
 
   return `${firstName} ${lastName}`;
+}
+
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log('clicked');
+  if (message.type === 'RUN_AUTOMATION') {
+    const { season, year, academicLevels } = message.payload;
+    console.log('Received automation command:', season, year, academicLevels);
+
+    runAutomation( season, year, academicLevels);
+  }
+});
+
+/* ------------------------------------------------------------------------------------------------------------
+ AUTOCLICK FUNCTIONALITY BELOW:
+*/
+
+async function runAutomation(season, year, academicLevel) {
+
+    const dropdowns = document.querySelectorAll('[data-automation-id="multiselectInputContainer"]');
+   
+    // Start Day Within element
+    const start_day_within = dropdowns[0];
+    start_day_within.click();
+
+    // Semester Calendar element
+    const semesterCalendar = await waitForElement('[data-automation-label="Semester Calendar"]');
+    if (semesterCalendar) { semesterCalendar.click(); }
+
+    // Scroll & Find current year
+    await scrollAndSelectYear(season, year);
+
+    // Semester element
+    const semesterElement = await waitForElement(`[data-automation-label*="${season} ${year}"]`);
+    if (semesterElement) { semesterElement.click(); }
+
+
+    // Academic Level Element
+    const academic_level = dropdowns[1];
+    academic_level.click();
+
+    for (let level of academicLevel) {
+      if (level == 'Graduate') {
+        const graduate = await waitForElement(`[data-automation-label="${level}"]`);
+        graduate.click();
+      } else if (level == 'Undergraduate') {
+        const undergraduate = await waitForElement(`[data-automation-label="${level}"]`);
+        undergraduate.click();
+      }
+    }
+    
+}
+
+async function scrollAndSelectYear(season, year) {
+    const SCROLL_STEP = 200;
+    const DELAY = 50;
+
+    // School year cutoff logic
+    const startYear = season == 'Spring' ? Number(year - 1): Number(year); // if it's spring, then start year is the year before
+    const targetText = `${startYear}-${ (startYear + 1) }`; // e.g. targetText = 2025-2026
+    console.log('Year: ' + targetText);
+
+    let previousScrollTop = -1;
+
+    const scrollContainer = await waitForElement('.ReactVirtualized__Grid.ReactVirtualized__List');
+
+    // Error where scroll container not found
+    if (!scrollContainer) {
+        console.error("Scroll container not found.");
+        return;
+    }
+
+    while (true){
+        const options = [...scrollContainer.querySelectorAll('[data-automation-id="promptOption"]')];
+        const match = options.find(el => el.textContent.includes(targetText));
+        if (match) {
+            match.click();
+            return;
+        }
+
+        if (scrollContainer.scrollTop === previousScrollTop) {
+          console.warn(`Reached end of list, "${targetText}" not found.`);
+          return;
+        }
+
+        
+        previousScrollTop = scrollContainer.scrollTop;
+        scrollContainer.scrollTop += SCROLL_STEP;
+        await sleep(DELAY);
+    }
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function waitForElement(selector, timeout = 5000) {
+    return new Promise((resolve, reject) => {
+        const interval = 50;
+        let elapsed = 0;
+        const timer = setInterval(() => {
+            const element = document.querySelector(selector);
+            if (element) {
+                clearInterval(timer);
+                resolve(element);
+            }
+            elapsed += interval;
+            if (elapsed >= timeout) {
+                clearInterval(timer);
+                reject(new Error(`Element ${selector} not found within ${timeout}ms`));
+            }
+        }, interval);
+    });
 }

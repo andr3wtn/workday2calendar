@@ -1,10 +1,10 @@
 {
   "name": "Workday RMP Helper",
   "manifest_version": 3,
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Show RateMyProfessors info when hovering over prof names on workday course searching pages.",
   "host_permissions": ["https://www.ratemyprofessors.com/*"],
-  "permissions": ["storage"],
+  "permissions": ["storage", "tabs"],
   "background": {
     "service_worker": "background.js"
   },

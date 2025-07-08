@@ -1,4 +1,4 @@
-async function automateCourseFilters() {
+async function automateCourseFilters(semester) {
     const dropdowns = document.querySelectorAll('[data-automation-id="multiselectInputContainer"]');
    
     // Start Day Within element
@@ -6,15 +6,15 @@ async function automateCourseFilters() {
     const input = start_day_within.querySelector('input');
     start_day_within.click();
     
-    input.value = "08/25/2025";
-    input.dispatchEvent(new Event('blur', { bubbles: true }));
-    input.dispatchEvent(new KeyboardEvent('keydown', {
-        key: 'Enter',
-        keyCode: 13,
-        which: 13,
-        bubbles: true,
-        cancelable: true
-    }));
+    // input.value = "08/25/2025";
+    // input.dispatchEvent(new Event('blur', { bubbles: true }));
+    // input.dispatchEvent(new KeyboardEvent('keydown', {
+    //     key: 'Enter',
+    //     keyCode: 13,
+    //     which: 13,
+    //     bubbles: true,
+    //     cancelable: true
+    // }));
 
     // Semester Calendar element
     const semester_calendar = document.querySelector('[data-automation-label="Semester Calendar"]');
@@ -28,35 +28,6 @@ async function automateCourseFilters() {
     semester.click();
 
     console.log("Course filter automation complete");
-}
-
-function getSemester() {
-    const now = newDate();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const date = now.getDate();
-
-    const startYear = month < 2 ? year - 1 : year;
-    const endYear = startYear + 1;
-    schoolYear = `${startYear}-${endYear}`;
-
-
-    // Before late March, students check for spring startYear
-    // e.g., Februrary 2025, students check Spring; April 2025, students check Fall
-    if (month < 2 || (month === 2 && day <= 20)) { // Before March 20th:
-        return 'Spring';
-    } else { // After March 20th:
-        return 'Fall';
-    }
-    
-    // July–Dec
-    // After mid-September, show spring
-    if (month > 8 || (month === 8 && day >= 23)) {
-        semester = `Spring ${schoolYearEnd}`;  // e.g., Spring 2026
-    } else {
-        semester = `Fall ${schoolYearEnd}`;    // e.g., Fall 2025
-    }
-    
 }
 
 async function scrollAndSelectYear() {
@@ -99,8 +70,6 @@ async function scrollAndSelectYear() {
         await sleep(DELAY);
     }
 }
-
-scrollAndSelectYear();
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
