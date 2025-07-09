@@ -1,8 +1,6 @@
 console.log("popup.js loaded");
 
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("[Popup] DOM fully loaded");
-
   populateSemesterSelect();
 
   chrome.storage.sync.get(["lastUsedSemester", "lastUsedAcademicLevels"], (data) => {
@@ -151,11 +149,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Switch to More Settings view
-  openOptions.addEventListener("click", () => {
-    mainContainer.style.display = "none";
-    optionsContainer.style.display = "block";
-  });
+  // // Switch to More Settings view
+  // openOptions.addEventListener("click", () => {
+  //   mainContainer.style.display = "none";
+  //   optionsContainer.style.display = "block";
+  // });
 
   // Back to main view
   backBtn.addEventListener("click", () => {
@@ -165,6 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Run Automation
   runBtn.addEventListener("click", () => {
+    console.log('run button clciked');
     const semesterSelect = document.querySelector("#semester");
     const selectedOption = semesterSelect.selectedOptions[0];
     const season = selectedOption.dataset.season;
@@ -191,13 +190,19 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   });
+
+  const extensionVersionSpan = document.querySelector('#extensionVersion');
+  console.log('234');
+  if (extensionVersionSpan) {
+    extensionVersionSpan.textContent = chrome.runtime.getManifest().version;
+  }
 });
 
 
 function populateSemesterSelect() {
   const semesterSelect = document.querySelector('#semester');
 
-  const CURRENT_YEAR = new Date().getFullYear();;
+  const CURRENT_YEAR = new Date().getFullYear();
   const SEASONS = ['Spring', 'Fall'];
 
   for (let i = 0; i <= 1; i++) { // Populate <select> tag with <options>: "Fall 2025", "Spring 2026", "Fall 2026", "Spring 2027", etc.

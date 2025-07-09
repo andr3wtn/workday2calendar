@@ -7,17 +7,31 @@ html, body {
     font-family: "Segoe UI", sans-serif;
 }
 
-.container, .options-container {
+.options-container {
     padding: 12px;
+}
+
+.container, .options-container {
     background-color: #ffffff;
     border-radius: 6px;
     box-sizing: border-box;
 }
 
 .container {
+
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1rem;
+}
+
+section, footer {
+    padding: 12px;
+    border-top: 1px solid #999;
+
+}
+
+#copyright {
+    font-size: 0.65rem;
 }
 
 label {
@@ -76,4 +90,8 @@ h3, h4 {
     display: flex;
     align-items: center;
     margin: 0;
+}
+
+a, a:visited {
+    color: inherit;
 }

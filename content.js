@@ -262,7 +262,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 */
 
 async function runAutomation(season, year, academicLevel) {
-
     const dropdowns = document.querySelectorAll('[data-automation-id="multiselectInputContainer"]');
    
     // Start Day Within element
