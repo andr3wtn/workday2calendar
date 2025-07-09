@@ -1,8 +1,8 @@
 {
-  "name": "Workday RMP Helper",
+  "name": "WashU Workday Helper",
   "manifest_version": 3,
   "version": "2.1.2",
-  "description": "Show RateMyProfessors info when hovering over prof names on workday course searching pages.",
+  "description": "Show RateMyProfessors info when hovering over prof names on workday course searching pages. Offers automatic clicker to streamline semester and academic levels selections on workday.",
   "host_permissions": ["https://www.ratemyprofessors.com/*"],
   "permissions": ["storage", "tabs"],
   "background": {
