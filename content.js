@@ -31,10 +31,8 @@ function normalizeName(name) {
 
 // When mouse enters *any* descendant of body, capture it if it matches SELECTOR
 document.body.addEventListener("mouseenter", e => {
-  console.log("chechking for professor name"); // DEBUGGING LINE; DELETE BEFORE PUBLISH
   const el = e.target;
   if (el.matches(SELECTOR) && isValidProfessor(el)) {
-    console.log("hovered over professor name"); // DEBUGGING LINE; DELETE BEFORE PUBLISH
     clearTimeout(hideTimer);
     const fullName = el.getAttribute("aria-label") || el.innerHTML || el.textContent;
     if (currentPopupAnchor !== el) {
@@ -57,7 +55,7 @@ document.body.addEventListener("mouseleave", e => {
 async function fetchRMPInfo(fullName) {
   const firstLast = convertToFirstLast(fullName);
   const searchUrl = `https://www.ratemyprofessors.com/search/professors/1147?q=${encodeURIComponent(firstLast)}`;
-  console.log("Matched teacher entries:", searchUrl);
+  console.debug("Matched teacher entries:", searchUrl);
   
   try {
   const response = await chrome.runtime.sendMessage({
@@ -89,7 +87,7 @@ async function fetchRMPInfo(fullName) {
       entry.school?.__ref === "U2Nob29sLTExNDc=" // WashU ID can be changed in future for all universities
     );
   
-  console.log("Matched teacher entries:", teacherEntries);
+  console.debug("Matched teacher entries:", teacherEntries);
 
   if (teacherEntries.length === 0) throw new Error("No valid professor found");
     const fullNameLower = firstLast.toLowerCase();
@@ -102,7 +100,7 @@ async function fetchRMPInfo(fullName) {
 
     //if no exact matches
     if (!bestMatch) {
-      console.log("No exact matches found. Searching for last name only");
+      console.debug("No exact matches found. Searching for last name only");
       const lastName = parts[parts.length - 1]; // Ignores middle name
       bestMatch = teacherEntries.find(
         entry => entry.lastName.toLowerCase() === lastName
@@ -138,7 +136,7 @@ async function fetchRMPInfo(fullName) {
 
         
     if (!bestMatch){
-      console.log("No best matches");
+      console.debug("No best matches");
     }
 
     return {
@@ -150,12 +148,12 @@ async function fetchRMPInfo(fullName) {
     };
 
   } catch (err) {
-    console.log("RMP fetch error:", err);
+    console.error("RMP fetch error:", err);
     return {
       name: firstLast,
-      // rating: "N/A",
-      // would_take_again: "N/A",
-      // difficulty: "N/A",
+      rating: undefined,
+      would_take_again: undefined,
+      difficulty: undefined,
       url: `https://www.ratemyprofessors.com/search/professors/1147?q=${encodeURIComponent(firstLast)}`
     };
   }
@@ -164,8 +162,6 @@ async function fetchRMPInfo(fullName) {
 
 // Showing the pop-up window
 async function showPopup(targetElem, fullName) {
-
-  console.log("showing popup"); // DEBUGGING LINE; DELETE BEFORE PUBLISH
 
   const popup = document.createElement("div");
   popup.className = "rmp-popup";
@@ -255,11 +251,8 @@ function convertToFirstLast(fullName) {
 
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('clicked');
   if (message.type === 'RUN_AUTOMATION') {
     const { season, year, academicLevels } = message.payload;
-    console.log('Received automation command:', season, year, academicLevels);
-
     runAutomation( season, year, academicLevels);
   }
 });
@@ -277,28 +270,42 @@ async function runAutomation(season, year, academicLevel) {
     start_day_within.click();
 
     // Semester Calendar element
-    const semesterCalendar = await waitForElement('[data-automation-label="Semester Calendar"]');
-    if (semesterCalendar) { semesterCalendar.click(); }
-
+    try {
+        const semesterCalendar = await waitForElement('[data-automation-label="Semester Calendar"]');
+        semesterCalendar.click();
+    } catch (error) {
+        console.error("Error clicking Semester Calendar:", error);
+        return;
+    }
+    
     // Scroll & Find current year
-    await scrollAndSelectYear(season, year);
+    try {
+        await scrollAndSelectYear(season, year);
+    } catch (error) {
+        console.error("Error during scrollAndSelectYear:", error);
+        return;
+    }
 
     // Semester element
-    const semesterElement = await waitForElement(`[data-automation-label*="${season} ${year}"]`);
-    if (semesterElement) { semesterElement.click(); }
-
+    try {
+        const semesterElement = await waitForElement(`[data-automation-label*="${season} ${year}"]`);
+        semesterElement.click();
+    } catch (error) {
+        console.error("Error clicking Semester element:", error);
+        return;
+    }
 
     // Academic Level Element
     const academic_level = dropdowns[1];
     academic_level.click();
 
     for (let level of academicLevel) {
-      if (level == 'Graduate') {
-        const graduate = await waitForElement(`[data-automation-label="${level}"]`);
-        graduate.click();
-      } else if (level == 'Undergraduate') {
-        const undergraduate = await waitForElement(`[data-automation-label="${level}"]`);
-        undergraduate.click();
+      try {
+            const levelElement = await waitForElement(`[data-automation-label="${level}"]`);
+            levelElement.click();
+      } catch (error) {
+          console.error(`Error clicking academic level "${level}":`, error);
+          return;
       }
     }
     
@@ -311,7 +318,6 @@ async function scrollAndSelectYear(season, year) {
     // School year cutoff logic
     const startYear = season == 'Spring' ? Number(year - 1): Number(year); // if it's spring, then start year is the year before
     const targetText = `${startYear}-${ (startYear + 1) }`; // e.g. targetText = 2025-2026
-    console.log('Year: ' + targetText);
 
     let previousScrollTop = -1;
 
