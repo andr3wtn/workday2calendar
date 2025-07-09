@@ -8,22 +8,25 @@ document.addEventListener("DOMContentLoaded", () => {
   chrome.storage.sync.get(["lastUsedSemester", "lastUsedAcademicLevels"], (data) => {
     const { lastUsedSemester, lastUsedAcademicLevels } = data;
 
-    if (lastUsedSemester && lastUsedAcademicLevels) {
-      const semesterSelect = document.querySelector("#semester");
+    if (!lastUsedSemester && !lastUsedAcademicLevels) {
+      return; // Exit if no last used settings are found
+    }
 
-      for (let option of semesterSelect.options) {
-        if (option.value === lastUsedSemester || option.textContent === lastUsedSemester) {
-          semesterSelect.value = option.value;
-          break;
-        }
-      }
+  
+    const semesterSelect = document.querySelector("#semester");
 
-      if (Array.isArray(lastUsedAcademicLevels)) {
-        const checkboxes = document.querySelectorAll("#dropdown-content input[type=checkbox]");
-        checkboxes.forEach(checkbox => {
-          checkbox.checked = lastUsedAcademicLevels.includes(checkbox.value);
-        });
+    for (let option of semesterSelect.options) {
+      if (option.value === lastUsedSemester || option.textContent === lastUsedSemester) {
+        semesterSelect.value = option.value;
+        break;
       }
+    }
+
+    if (Array.isArray(lastUsedAcademicLevels)) {
+      const checkboxes = document.querySelectorAll("#dropdown-content input[type=checkbox]");
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = lastUsedAcademicLevels.includes(checkbox.value);
+      });
     }
   });
 
@@ -194,12 +197,12 @@ document.addEventListener("DOMContentLoaded", () => {
 function populateSemesterSelect() {
   const semesterSelect = document.querySelector('#semester');
 
-  const currentYear = new Date().getFullYear();;
-  const seasons = ['Spring', 'Fall'];
+  const CURRENT_YEAR = new Date().getFullYear();;
+  const SEASONS = ['Spring', 'Fall'];
 
   for (let i = 0; i <= 1; i++) { // Populate <select> tag with <options>: "Fall 2025", "Spring 2026", "Fall 2026", "Spring 2027", etc.
-    for (let season of seasons) {
-      let year = currentYear + i;
+    for (let season of SEASONS) {
+      let year = CURRENT_YEAR + i;
       const option = document.createElement('option');
       option.value = `${season} ${year}`;
       option.textContent = `${season} ${year}`;
