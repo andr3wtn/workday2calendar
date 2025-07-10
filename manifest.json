@@ -4,7 +4,7 @@
   "version": "2.1.2",
   "description": "Show RMP info when hovering over prof names & offers automatic clicker to streamline course selections.",
   "host_permissions": ["https://www.ratemyprofessors.com/*"],
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage"],
   "background": {
     "service_worker": "background.js"
   },
