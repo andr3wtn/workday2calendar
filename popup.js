@@ -142,7 +142,6 @@ document.addEventListener("DOMContentLoaded", () => {
       primaryColor: primaryColor.value,
       textColor: textColor.value
     }, () => {
-      console.log("[Popup] Settings saved");
 
       saveBtn.innerText = "Saved!";
       setTimeout(() => saveBtn.innerText = "Save", 2000);
@@ -163,7 +162,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Run Automation
   runBtn.addEventListener("click", () => {
-    console.log('run button clciked');
     const semesterSelect = document.querySelector("#semester");
     const selectedOption = semesterSelect.selectedOptions[0];
     const season = selectedOption.dataset.season;
@@ -181,7 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
     chrome.storage.sync.set({
       lastUsedSemester: `${season} ${year}`,
       lastUsedAcademicLevels: academicLevels
-    }, () => { console.log('Last used settings saved.')});
+    }, () => { console.debug('Last used settings saved.')});
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, {
@@ -192,7 +190,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   const extensionVersionSpan = document.querySelector('#extensionVersion');
-  console.log('234');
   if (extensionVersionSpan) {
     extensionVersionSpan.textContent = chrome.runtime.getManifest().version;
   }
