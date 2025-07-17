@@ -1,4 +1,4 @@
-console.log("popup.js loaded");
+console.debug("popup.js loaded");
 
 document.addEventListener("DOMContentLoaded", () => {
   populateSemesterSelect();
@@ -109,7 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateBackground(selectedTheme, selectedColor, selectedTextColor);
 
     chrome.storage.sync.set({ theme: selectedTheme }, () => {
-      console.log("[Popup] Theme saved");
+      console.debug("[Popup] Theme saved");
     });
   });
 
@@ -119,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (theme.value === "custom") {
       updateBackground("custom", color, textColor.value);
       chrome.storage.sync.set({ primaryColor: color }, () => {
-        console.log("[Popup] Background color saved:", color);
+        console.debug("[Popup] Background color saved:", color);
       });
     }
   });
@@ -130,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (theme.value === "custom") {
       updateBackground("custom", primaryColor.value, color);
       chrome.storage.sync.set({ textColor: color }, () => {
-        console.log("[Popup] Text color saved:", color);
+        console.debug("[Popup] Text color saved:", color);
       });
     }
   });
