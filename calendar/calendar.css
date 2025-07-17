@@ -1,0 +1,40 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+}
+
+header {
+    background-color: #BA0C2F;
+    padding: 1px 30px;
+    color: white;
+    font-size: 1.5rem;
+}
+
+ol li {
+    margin-bottom: 0.8rem;
+}
+
+main {
+    padding: 30px;
+}
+
+#instructions {
+    font-size: 2rem;
+}
+
+#conversion-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+button {
+    width: 30%;
+}
+
+@font-face {
+    font-family: 'Roboto';
+    src: url('../assets/fonts/Roboto-VariableFont_wdth,wght.ttf') format('truetype');
+}

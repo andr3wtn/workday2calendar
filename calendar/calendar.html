@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Workday Calendar to Google Calendar</title>
+        <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+        <link rel="stylesheet" href="calendar.css">
+    </head>
+    <body>
+        <header>
+            <h1>Workday2Calendar</h1>
+        </header>
+        <main>
+            <div>
+                <b id="instructions">Instructions: </b>
+                <ol>
+                    <li>Go to your <i>Current Classes</i> page on
+                        <a href="https://www.myworkday.com/wustl/" target="_blank" rel="noreferrer">
+                            Workday.
+                        </a>
+                    </li>
+
+                    <li>
+                        Click "Export to Excel" and download the exported file
+                    </li>
+                    <li>Upload the downloaded file here</li>
+
+                    <li>
+                        After upload, it will generate an <b>ICS file</b> you can import into Google Calendar.
+                    </li>
+                </ol>
+            </div>
+            <div id="conversion-container">
+                <input type="file" id="excelFile" accept=".xlsx" name="Excel">
+                <button type="button" onclick="convertExcelToICS()">Convert to Google Calendar</button>
+            </div>
+
+            <script src="calendar.js"></script>
+        </main>
+
+    </body>
+</html>
