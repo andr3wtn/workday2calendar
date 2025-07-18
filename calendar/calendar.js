@@ -1,4 +1,4 @@
-/* ------------ Google API Configuration ------------ */
+/* ------------ Google API & Gobal Configuration ------------ */
 const CLIENT_ID = '396216549149-vfos9j1ve4g59863n4ll6drrua02f6v9.apps.googleusercontent.com';
 // const API_KEY = 'YOUR_API_KEY'; // **REPLACE THIS** (optional for client-side OAuth)
 const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
@@ -61,14 +61,16 @@ const exportButton = document.getElementById('export-button');
 document.addEventListener('DOMContentLoaded', updateButtonVisibility); // Starting point
 
 function updateButtonVisibility() {
-    if (gapiInited && gisInited && gapi.client.getToken()) {
-        // User is signed in and APIs are loaded
+    // User is signed in and APIs are loaded
+    if (gapiInited && gisInited && gapi.client.getToken()) { 
         signInButton.style.display = 'none'; // Hide sign-in button
         exportButton.style.display = 'block'; // Show export button
         authStatusElement.innerText = 'Signed in to Google Calendar. Ready to export!';
         authStatusElement.style.color = "#215732";
-    } else {
-        // Not signed in or APIs not fully loaded
+
+    // Not signed in or APIs not fully loaded
+    } else { 
+        // exportButton.style.display = 'block'; // DEBUG***********
         signInButton.style.display = 'block'; // Show sign-in button
         exportButton.style.display = 'none'; // Hide export button
         authStatusElement.innerText = 'Please sign in with Google to use the calendar features.';
@@ -116,12 +118,15 @@ function parseMeetingPattern(pattern) {
 
     // Days -> ["Tue","Thu"] => ["TU","TH"]
     const days = daysPart.split(/[ /]+/).map(d => WEEKDAY_MAP[d]).filter(Boolean);
-
+    // console.log("days ", days); // DEBUG
     let startTime = null, endTime = null;
     if (timePart.includes("-")) {
         const [startStr, endStr] = timePart.split("-").map(s => s.trim());
+
         startTime = parseTime(startStr);
         endTime = parseTime(endStr);
+        // console.log("start time: ", startTime); // DEBUG
+        // console.log("end time: ", endTime); // DEBUG
     }
     return { days, startTime, endTime, buildingPart, roomPart };
 }
@@ -167,25 +172,48 @@ async function handleExport() {
             const workbook = XLSX.read(data, { type: "array" });
             const sheetName = workbook.SheetNames[0];
             const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
-            const rows = sheet.filter(row => row.length > 8 && typeof row[8] === "string");
-            
-            const TIMEZONE = "America/Chicago"; // St Louis time by default
+            // console.log("SHEET: ", sheet); // DEBUG
 
-                // DEBUG
-                console.log("time zone set");
+            const TIMEZONE = "America/Chicago"; // St Louis time by default
+            const rows = sheet.slice(3).filter(row => row.length > 8 && typeof row[8] === "string")
+                .map(row => {
+                    const startDateRaw = row[10];
+                    const endDateRaw = row[11];
+                    if (typeof startDateRaw === "number" && typeof endDateRaw === "number") {
+                        const startDate = new Date(1900, 0, startDateRaw + 1);
+                        startDate.setDate(startDate.getDate() - 1);
+                        const endDate = new Date(1900, 0, endDateRaw + 1);
+                        endDate.setDate(endDate.getDate() - 1); 
+
+                        const startDateInZone = luxon.DateTime.fromJSDate(startDate, { zone: TIMEZONE }).toISO();  // Convert and format to ISO string
+                        const endDateInZone = luxon.DateTime.fromJSDate(endDate, { zone: TIMEZONE }).toISO();  // Convert and format to ISO string
+
+                        // Update the row with timezone-converted dates
+                        row[10] = startDateInZone;
+                        row[11] = endDateInZone;
+                    }
+                    return row.slice(1, 12);
+                });
+            console.log("ROWS: ", rows); // DEBUG
+
             let eventsCreatedCount = 0;
             let eventsSkippedCount = 0;
             let eventsFailedCount = 0;
 
-                            // DEBUG
-            console.log("generating calednar");
+            console.log("generating calednar"); // DEBUG
+            let count = 1;  // DEBUG
             for (const row of rows) {
-                const courseName = row[4];
-                const meetingPattern = row[8];
-                const instructor = row[9];
-                const startDateRaw = row[10];
-                const endDateRaw = row[11];
+                console.log("Parsing Row ", count); // DEBUG
+                count ++; // DEBUG
+                const courseName = formatCourseName(row[0]);
+                console.log("course name: ", courseName);
+                const meetingPattern = row[7];
+                const instructor = row[8];
+                const startDateRaw = row[9];
+                const endDateRaw = row[10];
 
+                console.log("startDateRaw: ", startDateRaw); // DEBUG
+                console.log("endDateRaw: ", endDateRaw); // DEBUG
                 if (!meetingPattern) {
                     eventsSkippedCount++;
                     continue;
@@ -196,30 +224,63 @@ async function handleExport() {
                     eventsSkippedCount++;
                     continue;
                 }
+                // console.log("days length: ", days.length); // DEBUG
+                console.log("start time: ", startTime); // DEBUG
+                console.log("end time: ", endTime); // DEBUG
 
-                const startDate = new Date(startDateRaw);
-                const endDate = new Date(endDateRaw);
+                const startDate = luxon.DateTime.fromISO(startDateRaw, { zone: TIMEZONE });
+                const endDate = luxon.DateTime.fromISO(endDateRaw, { zone: TIMEZONE });
 
-                let startDateTime = new Date(startDate);
-                startDateTime.setHours(startTime.hour, startTime.minute, 0, 0);
+                console.log("start date: ", startDate); // DEBUG
+                console.log("end date: ", endDate); // DEBUG
 
-                let endDateTime = new Date(startDate);
-                endDateTime.setHours(endTime.hour, endTime.minute, 0, 0);
+                const startDateTime = startDate.set({
+                    hour: startTime.hour,
+                    minute: startTime.minute,
+                    second: 0,
+                    millisecond: 0
+                });
+
+                const endDateTime = startDate.set({
+                    hour: endTime.hour,
+                    minute: endTime.minute,
+                    second: 0,
+                    millisecond: 0
+                });
+
+                console.log("start date time: ", startDateTime.toJSDate()); // DEBUG
+                console.log("end date time: ", endDateTime.toJSDate()); // DEBUG
 
                 const rruleDays = days.join(",");
-                const untilDate = new Date(endDate);
-                untilDate.setHours(23, 59, 59, 999);
-                const untilStr = untilDate.toISOString().replace(/\.\d{3}Z$/, 'Z').replace(/-/g, '').replace(/:/g, '');
+                const untilDate = endDate.endOf('day');
+                const untilStr = untilDate.toUTC().toFormat("yyyyMMdd'T'HHmmss'Z'");
+                // untilDate.setHours(23, 59, 59, 999);
+                // const untilStr = untilDate.toISOString().replace(/\.\d{3}Z$/, 'Z').replace(/-/g, '').replace(/:/g, '');
                 const recurrenceRule = [`RRULE:FREQ=WEEKLY;BYDAY=${rruleDays};UNTIL=${untilStr}`];
 
+                console.log("\n");
+                console.log("Rrule days: ", rruleDays);
+                console.log("until date: ", untilDate); // DEBUG
+                console.log("until string: ", untilStr); // DEBUG
+                // console.log("course name: ", courseName); // DEBUG
+                // console.log("Description: ", instructor, " ", meetingPattern); // DEBUG
+                console.log("Location: ", buildingPart); // DEBUG
+                console.log("Reccurrence Rule: ", recurrenceRule);
                 const eventData = {
                     summary: courseName,
                     description: `Instructor: ${instructor}\nMeeting: ${meetingPattern}`,
-                    location: location,
-                    start: { dateTime: startDateTime.toISOString().substring(0, 19), timeZone: TIMEZONE },
-                    end: { dateTime: endDateTime.toISOString().substring(0, 19), timeZone: TIMEZONE },
+                    location: buildingPart,
+                    start: { 
+                        dateTime: startDateTime.toFormat("yyyy-MM-dd'T'HH:mm:ss"),
+                        timeZone: TIMEZONE 
+                    },
+                    end: { 
+                        dateTime: endDateTime.toFormat("yyyy-MM-dd'T'HH:mm:ss"),
+                        timeZone: TIMEZONE 
+                    },
                     recurrence: recurrenceRule,
                 };
+                console.log("Eventdata: ", eventData);
 
                 try {
                     await createGoogleCalendarEvent(eventData);
@@ -228,7 +289,7 @@ async function handleExport() {
                     eventsFailedCount++;
                     console.error(`Failed to create event for ${courseName}:`, error);
                 }
-                
+                console.log('\n'); //debug
             } 
             alert(`Export process completed!
                 \nSuccessfully created: ${eventsCreatedCount} events.
@@ -285,4 +346,20 @@ async function createGoogleCalendarEvent(eventData) {
         console.error('Error creating event: ', err.message);
         throw err;
     }
+}
+
+
+/* --------- Helper Functions --------- */
+function formatCourseName(courseName) {
+    const parts = courseName.split(' - ');
+    const courseNumber = parts[0].split('-')[0];
+
+    let courseTitle = parts[1];
+    courseTitle = courseTitle.replace(/\bintroduction\b/gi, "Intro");
+
+    let formattedCoursName = `${courseNumber} ${courseTitle}`;
+    if (formattedCoursName.length > 50) {
+        formattedCoursName.substring(0, 50);
+    }
+    return formattedCoursName;
 }
