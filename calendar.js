@@ -1,9 +1,5 @@
 /* ------------ Google API & Gobal Configuration ------------ */
-const config = { 
-    CLIENT_ID: process.env.CLIENT_ID,
-    DISCOVERY_DOCS: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-    SCOPES: process.env.SCOPES
-}
+// 
 
 let tokenClient;
 let gapiInited = false;
@@ -11,6 +7,18 @@ let gisInited = false;
 
 function gapiLoaded() {
     gapi.load('client', initializeGapiClient);
+}
+
+// Called when accounts.google.com/gsi/client is loaded
+function gisLoaded() {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: config.CLIENT_ID,
+        scope: config.SCOPES,
+        callback: '', // This will be set dynamically in handleAuthClick
+    });
+    gisInited = true;
+    console.log("Google Identity Services loaded.");
+    updateButtonVisibility();
 }
 
 async function initializeGapiClient() {
@@ -28,17 +36,7 @@ async function initializeGapiClient() {
     }
 }
 
-// Called when accounts.google.com/gsi/client is loaded
-function gisLoaded() {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: config.CLIENT_ID,
-        scope: config.SCOPES,
-        callback: '', // This will be set dynamically in handleAuthClick
-    });
-    gisInited = true;
-    console.log("Google Identity Services loaded.");
-    updateButtonVisibility();
-}
+
 
 // Weekday mapping for ICS RRULE
 const WEEKDAY_MAP = {
@@ -55,11 +53,15 @@ const WEEKDAY_MAP = {
 
 
 /* --- HTML Button Handling --- */
-const authStatusElement = document.getElementById('auth-status');
-const signInButton = document.getElementById('google-sign-in-button');
-const exportButton = document.getElementById('export-button');
-
-document.addEventListener('DOMContentLoaded', updateButtonVisibility); // Starting point
+let authStatusElement = document.getElementById('auth-status');
+let signInButton = document.getElementById('google-sign-in-button');
+let exportButton = document.getElementById('export-button');
+document.addEventListener('DOMContentLoaded', () => {
+    authStatusElement = document.getElementById('auth-status');
+    signInButton = document.getElementById('google-sign-in-button');
+    exportButton = document.getElementById('export-button');
+    updateButtonVisibility;}
+); // Starting point
 
 function updateButtonVisibility() {
     // User is signed in and APIs are loaded
@@ -220,7 +222,7 @@ async function handleExport() {
                     continue;
                 }
 
-                const { days, startTime, endTime, buildingPart, roomPart } = parseMeetingPattern(meetingPattern);
+                let { days, startTime, endTime, buildingPart, roomPart } = parseMeetingPattern(meetingPattern);
                 if (!days.length || !startTime || !endTime) {
                     eventsSkippedCount++;
                     continue;
@@ -299,7 +301,7 @@ async function handleExport() {
                         timeZone: TIMEZONE 
                     },
                     recurrence: recurrenceRule,
-                    colorId: colorId,
+                    colorId: colorId.toString(),
                 };
                 if (colorId > 7) {
                     const message = document.createElement("p");
@@ -310,7 +312,7 @@ async function handleExport() {
                 console.log("Eventdata: ", eventData); // DEBUG
 
                 try {
-                    // await createGoogleCalendarEvent(eventData);
+                    await createGoogleCalendarEvent(eventData);
                     eventsCreatedCount++;
                 } catch (error) {
                     eventsFailedCount++;
@@ -342,7 +344,7 @@ async function handleExport() {
  * @param {*} eventData: 
  * */ 
 async function createGoogleCalendarEvent(eventData) {
-    const { summary, description, location, start, end, recurrence } = eventData;
+    const { summary, description, location, start, end, recurrence, colorId } = eventData;
 
     // Google Calendar expects RFC3339 format (ISO 8601 with Z for UTC or +HH:MM for offset)
     // The 'start' and 'end' objects should contain 'dateTime' and 'timeZone'.
@@ -358,6 +360,7 @@ async function createGoogleCalendarEvent(eventData) {
         'reminders': {
             'useDefault': true,
         },
+        ...(colorId && { 'colorId': colorId }),
     };
 
     try {
@@ -386,7 +389,7 @@ function formatCourseName(courseName) {
 
     let formattedCoursName = `${courseNumber} ${courseTitle}`;
     if (formattedCoursName.length > 50) {
-        formattedCoursName.substring(0, 50);
+        return formattedCoursName.substring(0, 50);
     }
     return formattedCoursName;
 }
