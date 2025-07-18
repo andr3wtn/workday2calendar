@@ -102,6 +102,14 @@ main {
 
 }
 
+#result {
+    border-radius: 6px;
+    border: 1px solid black;
+    width: 400px;
+    margin-top: 20px;
+    padding: 0 20px;
+}
+
 @font-face {
     font-family: 'Roboto';
     src: url('assets/fonts/Roboto-VariableFont_wdth,wght.ttf') format('truetype');

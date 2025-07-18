@@ -1,5 +1,4 @@
 /* ------------ Google API & Gobal Configuration ------------ */
-// 
 
 let tokenClient;
 let gapiInited = false;
@@ -14,7 +13,8 @@ function gisLoaded() {
     tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: config.CLIENT_ID,
         scope: config.SCOPES,
-        callback: '', // This will be set dynamically in handleAuthClick
+        // redirect_uri: 'http://localhost:5501',
+        callback: '',
     });
     gisInited = true;
     console.log("Google Identity Services loaded.");
@@ -156,11 +156,11 @@ async function handleExport() {
         return;
     }
 
-    // if (!gapi.client.getToken()) {
-    //     alert('You are not signed in to Google. Please sign in first.');
-    //     handleAuthClick();
-    //     return;
-    // }
+    if (!gapi.client.getToken()) {
+        alert('You are not signed in to Google. Please sign in first.');
+        handleAuthClick();
+        return;
+    }
 
     authStatusElement.innerText = 'Processing and exporting events...';
 
@@ -319,11 +319,24 @@ async function handleExport() {
                     console.error(`Failed to create event for ${courseName}:`, error);
                 }
                 console.log('\n'); // debug
-            } 
-            alert(`Export process completed!
-                \nSuccessfully created: ${eventsCreatedCount} events.
-                \nSkipped: ${eventsSkippedCount} events (due to missing pattern/time).
-                \nFailed: ${eventsFailedCount} events (check console for details).`);
+            }
+            const result = document.createElement("div");
+            result.id = "result";
+            const line1 = document.createElement("p");
+            line1.innerText = "Export process completed!";
+            const line2 = document.createElement("p");
+            line2.innerText =  `Successfully created: ${eventsCreatedCount} events.`;
+            const line3 = document.createElement("p");
+            line3.innerText =  `Skipped: ${eventsSkippedCount} events (due to missing pattern/time).`;
+            const line4 = document.createElement("p");
+            line4.innerText = `Failed: ${eventsFailedCount} events (check console for details).`;
+            result.appendChild(line1);
+            result.appendChild(line2);
+            result.appendChild(line3);
+            result.appendChild(line4);
+
+            document.querySelector("#buttons").appendChild(result);
+
             authStatusElement.innerText = 'Export complete. Check your Google Calendar!';
         } catch (error) {
             console.error("Error during file processing or export:", error);
