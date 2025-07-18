@@ -104,7 +104,7 @@ main {
 
 @font-face {
     font-family: 'Roboto';
-    src: url('../assets/fonts/Roboto-VariableFont_wdth,wght.ttf') format('truetype');
+    src: url('assets/fonts/Roboto-VariableFont_wdth,wght.ttf') format('truetype');
 }
 
 @media (max-width:1110px) {

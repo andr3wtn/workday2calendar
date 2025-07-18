@@ -1,8 +1,9 @@
 /* ------------ Google API & Gobal Configuration ------------ */
-const CLIENT_ID = '396216549149-vfos9j1ve4g59863n4ll6drrua02f6v9.apps.googleusercontent.com';
-// const API_KEY = 'YOUR_API_KEY'; // **REPLACE THIS** (optional for client-side OAuth)
-const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"];
-const SCOPES = "https://www.googleapis.com/auth/calendar.events"; 
+const config = { 
+    CLIENT_ID: process.env.CLIENT_ID,
+    DISCOVERY_DOCS: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+    SCOPES: process.env.SCOPES
+}
 
 let tokenClient;
 let gapiInited = false;
@@ -16,7 +17,7 @@ async function initializeGapiClient() {
     try {
         await gapi.client.init({
             // apiKey: API_KEY, // Can be omitted if solely relying on OAuth for auth
-            discoveryDocs: DISCOVERY_DOCS,
+            discoveryDocs: config.DISCOVERY_DOCS,
         });
         gapiInited = true;
         console.log("Google API client loaded.");
@@ -30,8 +31,8 @@ async function initializeGapiClient() {
 // Called when accounts.google.com/gsi/client is loaded
 function gisLoaded() {
     tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES,
+        client_id: config.CLIENT_ID,
+        scope: config.SCOPES,
         callback: '', // This will be set dynamically in handleAuthClick
     });
     gisInited = true;
@@ -70,7 +71,6 @@ function updateButtonVisibility() {
 
     // Not signed in or APIs not fully loaded
     } else { 
-        // exportButton.style.display = 'block'; // DEBUG***********
         signInButton.style.display = 'block'; // Show sign-in button
         exportButton.style.display = 'none'; // Hide export button
         authStatusElement.innerText = 'Please sign in with Google to use the calendar features.';
@@ -117,7 +117,7 @@ function parseMeetingPattern(pattern) {
     const roomPart = locationParts[1] || "";
 
     // Days -> ["Tue","Thu"] => ["TU","TH"]
-    const days = daysPart.split(/[ /]+/).map(d => WEEKDAY_MAP[d]).filter(Boolean);
+    const days = daysPart.split(/[ /]+/).filter(Boolean);
     // console.log("days ", days); // DEBUG
     let startTime = null, endTime = null;
     if (timePart.includes("-")) {
@@ -154,11 +154,11 @@ async function handleExport() {
         return;
     }
 
-    if (!gapi.client.getToken()) {
-        alert('You are not signed in to Google. Please sign in first.');
-        handleAuthClick();
-        return;
-    }
+    // if (!gapi.client.getToken()) {
+    //     alert('You are not signed in to Google. Please sign in first.');
+    //     handleAuthClick();
+    //     return;
+    // }
 
     authStatusElement.innerText = 'Processing and exporting events...';
 
@@ -202,6 +202,7 @@ async function handleExport() {
 
             console.log("generating calednar"); // DEBUG
             let count = 1;  // DEBUG
+            let colorId = 1;
             for (const row of rows) {
                 console.log("Parsing Row ", count); // DEBUG
                 count ++; // DEBUG
@@ -228,7 +229,26 @@ async function handleExport() {
                 console.log("start time: ", startTime); // DEBUG
                 console.log("end time: ", endTime); // DEBUG
 
-                const startDate = luxon.DateTime.fromISO(startDateRaw, { zone: TIMEZONE });
+                let startDate = luxon.DateTime.fromISO(startDateRaw, { zone: TIMEZONE });
+
+                console.log("Parsed Start Date: ", startDate.isValid ? startDate.toISO() : "Invalid");
+
+                // If the meetingDay is different from the startDay (usually a Monday due to WashU semester schedules)
+                console.log("Days from meeting pattern: ", days);
+
+                const meetingDays = days.map(day => luxon.DateTime.fromFormat(day, 'EEE').weekday);
+                console.log("Meeting Days: ", meetingDays);
+
+                const startDayOfWeek = startDate.weekday;
+                console.log("Start Day of Week: ", startDayOfWeek);
+
+                if (!meetingDays.includes(startDayOfWeek)) {
+                    const dayDifference = (meetingDays[0] - startDayOfWeek + 7) % 7;  // Adjust start to the first meeting day
+                    console.log("Day Difference: ", dayDifference);
+
+                    startDate = startDate.plus({ days: dayDifference });
+                }
+                days = days.map((day) => { return WEEKDAY_MAP[day]; })
                 const endDate = luxon.DateTime.fromISO(endDateRaw, { zone: TIMEZONE });
 
                 console.log("start date: ", startDate); // DEBUG
@@ -279,17 +299,24 @@ async function handleExport() {
                         timeZone: TIMEZONE 
                     },
                     recurrence: recurrenceRule,
+                    colorId: colorId,
                 };
-                console.log("Eventdata: ", eventData);
+                if (colorId > 7) {
+                    const message = document.createElement("p");
+                    message.innerHTML = "Excuse me how many classes???";
+                    if (exportButton) { exportButton.append(message); }
+                }
+                colorId = (colorId % 9) + 1;
+                console.log("Eventdata: ", eventData); // DEBUG
 
                 try {
-                    await createGoogleCalendarEvent(eventData);
+                    // await createGoogleCalendarEvent(eventData);
                     eventsCreatedCount++;
                 } catch (error) {
                     eventsFailedCount++;
                     console.error(`Failed to create event for ${courseName}:`, error);
                 }
-                console.log('\n'); //debug
+                console.log('\n'); // debug
             } 
             alert(`Export process completed!
                 \nSuccessfully created: ${eventsCreatedCount} events.
