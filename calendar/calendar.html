@@ -16,7 +16,7 @@
                 <ol>
                     <li>Go to your <i>Current Classes</i> page on
                         <a href="https://www.myworkday.com/wustl/" target="_blank" rel="noreferrer">
-                            Workday.
+                            Workday
                         </a>
                     </li>
 
@@ -32,11 +32,29 @@
             </div>
             <div id="conversion-container">
                 <input type="file" id="excelFile" accept=".xlsx" name="Excel">
-                <button type="button" onclick="convertExcelToICS()">Convert to Google Calendar</button>
+                <button type="button" id="convert-button" onclick="convertExcelToICS()">Convert to Calendar File</button>
             </div>
 
-            <script src="calendar.js"></script>
+            <section>
+                <button type="button" id="google-sign-in-button" onclick="handleAuthClick()">
+                    Sign in with Google to Export
+                </button>
+                <p id="auth-status"></p>
+
+                <button type="button" id="export-button" onclick="handleExport()" style="display: none;">
+                    Export Courses to Google Calendar
+                </button>
+            </section>
+
+
         </main>
 
+        <footer>
+            <h1>About this site</h1>
+        </footer>
+
+        <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+        <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+        <script src="calendar.js"></script>
     </body>
 </html>
