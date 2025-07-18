@@ -11,24 +11,36 @@
             <h1>Workday2Calendar</h1>
         </header>
         <main>
-            <div>
-                <b id="instructions">Instructions: </b>
-                <ol>
-                    <li>Go to your <i>Current Classes</i> page on
-                        <a href="https://www.myworkday.com/wustl/" target="_blank" rel="noreferrer">
-                            Workday
-                        </a>
-                    </li>
+            <div id="instructions-container">
+                <div>
+                    <b id="instructions">Instructions: </b>
+                    <ol>
+                        <li>Go to your <i>Current Classes</i> page on
+                            <a href="https://www.myworkday.com/wustl/" target="_blank" rel="noreferrer">
+                                Workday
+                            </a>
+                        </li>
 
-                    <li>
-                        Click "Export to Excel" and download the exported file
-                    </li>
-                    <li>Upload the downloaded file here</li>
+                        <li>
+                            Click "Export to Excel" and download the exported file
+                        </li>
+                        <li>Upload the downloaded file here</li>
 
-                    <li>
-                        After upload, it will generate an <b>ICS file</b> you can import into Google Calendar.
-                    </li>
-                </ol>
+                        <li>
+                            After upload, you can choose to either <br>
+                            <ul>
+                                <li class="no-mb">
+                                    <span class="indent"> sign in &amp; export directly to google calendar</span> <br>
+                                </li>
+                                <li class="no-mb">
+                                    <span class="indent">convert to an <strong>ICS file</strong> that you can import to your local calendar</span>
+                                </li>
+                            </ul>
+
+                        </li>
+                    </ol>
+                </div>
+                <img src="/assets/Instructions.jpg" alt="insturctions" id="instructions-img">
             </div>
             <div id="conversion-container">
                 <input type="file" id="excelFile" accept=".xlsx" name="Excel">
@@ -39,7 +51,7 @@
                 <button type="button" id="google-sign-in-button" onclick="handleAuthClick()">
                     Sign in with Google to Export
                 </button>
-                <p id="auth-status"></p>
+                <p class="no-mb" id="auth-status"></p>
 
                 <button type="button" id="export-button" onclick="handleExport()" style="display: none;">
                     Export Courses to Google Calendar
@@ -51,6 +63,8 @@
 
         <footer>
             <h1>About this site</h1>
+            <p>Not affiliated with WashU or Google.</p>
+            <p>Copyright &COPY;2025</p>
         </footer>
 
         <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
