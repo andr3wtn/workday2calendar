@@ -28,7 +28,6 @@ function gisLoaded() {
 async function initializeGapiClient() {
     try {
         await gapi.client.init({
-            // apiKey: API_KEY, // Can be omitted if solely relying on OAuth for auth
             discoveryDocs: config.DISCOVERY_DOCS,
         });
         gapiInited = true;
@@ -74,9 +73,8 @@ function updateButtonVisibility() {
 
     // Not signed in or APIs not fully loaded
     } else { 
-        exportButton.style.display = 'block';
         signInButton.style.display = 'block'; // Show sign-in button
-        // exportButton.style.display = 'none'; // Hide export button
+        exportButton.style.display = 'none'; // Hide export button
         authStatusElement.innerText = 'Please sign in with Google to use the calendar features.';
     }
 }
@@ -89,7 +87,7 @@ async function handleAuthClick() {
             authStatusElement.innerText = 'Sign-in failed. Please try again.';
             throw (resp);
         }
-        console.debug('Authorization successful.');
+        // console.debug('Authorization successful.'); // DEBUG
         updateButtonVisibility(); // Update button visibility on successful auth
     };
 
@@ -100,8 +98,7 @@ async function handleAuthClick() {
     } else {
         // Token exists, just refresh it if needed (or re-prompt if scope changes etc.)
         // For simplicity, we'll re-request access without prompt if token exists.
-        // In a real app, you'd check token expiry and refresh silently.
-        tokenClient.requestAccessToken({prompt: ''}); // Use '' for silent refresh if possible
+        tokenClient.requestAccessToken({prompt: ''});
     }
 }
 
@@ -121,17 +118,11 @@ function parseMeetingPattern(pattern) {
     if (locationPart) {
         // Crop room from "Room 00222" to "222"
         const locationParts = locationPart.split(",").map(p => p.trim());
-        console.log(locationParts); // DEBUG
         const roomPart = locationParts[1] || "";
-        console.log(roomPart); // DEBUG
         if (roomPart) {
             const digits = roomPart.match(/\d+/)[0];  // "Room 00222" to "00222"
-
-            console.log(digits); // DEBUG
             const cropped = String(Number(digits)) || "";
-
             location = locationParts[0] + " " + cropped;
-            console.log(location); // DEBUG
         }
 
     }
@@ -172,11 +163,11 @@ async function handleExport() {
         return;
     }
 
-    // if (!gapi.client.getToken()) {
-    //     alert('You are not signed in to Google. Please sign in first.');
-    //     handleAuthClick();
-    //     return;
-    // }
+    if (!gapi.client.getToken()) {
+        alert('You are not signed in to Google. Please sign in first.');
+        handleAuthClick();
+        return;
+    }
 
     authStatusElement.innerText = 'Processing and exporting events...';
 
@@ -329,8 +320,7 @@ async function handleExport() {
 async function createGoogleCalendarEvent(eventData) {
     const { summary, description, location, start, end, recurrence, colorId } = eventData;
 
-    // Google Calendar expects RFC3339 format (ISO 8601 with Z for UTC or +HH:MM for offset)
-    // The 'start' and 'end' objects should contain 'dateTime' and 'timeZone'.
+    // The 'start' and 'end' objects contain 'dateTime' and 'timeZone'.
     // Example: { "dateTime": "2025-07-20T10:00:00-05:00", "timeZone": "America/Chicago" }
 
     const event = {
@@ -348,7 +338,7 @@ async function createGoogleCalendarEvent(eventData) {
 
     try {
         const request = gapi.client.calendar.events.insert({
-            'calendarId': 'primary', // Or a specific calendar ID if you want to let the user choose
+            'calendarId': 'primary',
             'resource': event,
         });
 
