@@ -386,12 +386,12 @@ function showResultPopup(eventsCreatedCount, eventsSkippedCount, eventsFailedCou
     modal.classList.remove("hidden");
 }
 
-    // ✅ Add close functionality
+    // Add close functionality
 document.getElementById("result-modal-close").addEventListener("click", () => {
     document.getElementById("result-modal").classList.add("hidden");
 });
 
-    // ✅ Also close modal if clicking on backdrop
+    // Also close modal if clicking on backdrop
 document.getElementById("result-modal").addEventListener("click", (e) => {
     if (e.target.id === "result-modal") {
         e.currentTarget.classList.add("hidden");
