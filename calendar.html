@@ -4,72 +4,164 @@
         <title>Workday Calendar to Google Calendar</title>
         <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                theme: {
+                    extend: {
+                        colors: {
+                            'washu-red': '#BA0C2F',
+                            'washu-dark-red': '#9D0927',
+                            'washu-green': '#215732',
+                            'washu-dark-green': '#11341b',
+                        },
+                        screens: {
+                            'xl': '1155px',
+                        },
+                        fontFamily: {
+                            roboto: ['Roboto', 'sans-serif'],
+                        },
+                    },
+                },
+            };
+        </script>
         <link rel="stylesheet" href="calendar.css">
     </head>
-    <body>
-        <header>
-            <h1>Workday2Calendar</h1>
-        </header>
-        <main>
-            <div id="instructions-container">
-                <div>
-                    <b id="instructions">Instructions: </b>
-                    <ol>
-                        <li>Go to your <i>Current Classes</i> page on
-                            <a href="https://www.myworkday.com/wustl/" target="_blank" rel="noreferrer">
-                                Workday
-                            </a>
-                        </li>
+    <body class="min-h-screen flex flex-col justify-between font-roboto">
+      <header class="bg-washu-red px-8 text-white text-xl">
+        <h1 class="text-[2.875rem] font-bold my-[40px]">Workday2Calendar</h1>
+      </header>
 
-                        <li>
-                            Click "Export to Excel" and download the exported file
-                        </li>
-                        <li>Upload the downloaded file here</li>
+      <main class="flex-1 text-gray-900 p-8">
+        <div class="flex flex-col xl:flex-row">
+          <div class="flex-1">
+            <h2 class="text-3xl font-bold mb-4">Instructions:</h2>
+            <ol class="space-y-3 list-decimal pl-8">
+              <li>
+                Go to your <b>Current Classes</b> page on
+                <a 
+                  href="https://www.myworkday.com/wustl/" 
+                  target="_blank" 
+                  rel="noreferrer"
+                  class="text-blue-600 hover:text-blue-800"
+                >
+                Workday
+                </a>
+              </li>
+              <li>Click <b>Export to Excel</b> and download the exported file</li>
+              <li>Upload the downloaded file below</li>
+              <li>
+                After upload, you can choose to either:
+                <ul class="list-disc ml-6 mt-2 space-y-1">
+                  <li>
+                    <span class="">
+                      sign in &amp; export directly to google calendar
+                    </span>
+                  </li>
+                  <li>
+                    <span class="">
+                      convert to an <strong>ICS file</strong> that you can import to your local calendar
+                    </span>
+                  </li>
+                </ul>
+              </li>
+            </ol>
+          </div>
+          <div class="lg:w-[800px]">
+            <img 
+              src="/assets/Instructions.jpg" 
+              alt="instructions" 
+              class="w-full rounded-lg shadow-md"
+            >
+          </div>
+        </div>
 
-                        <li>
-                            After upload, you can choose to either <br>
-                            <ul>
-                                <li class="no-mb">
-                                    <span class="indent"> sign in &amp; export directly to google calendar</span> <br>
-                                </li>
-                                <li class="no-mb">
-                                    <span class="indent">convert to an <strong>ICS file</strong> that you can import to your local calendar</span>
-                                </li>
-                            </ul>
+          <!-- Conversion Container -->
+          <div class="my-8">
+              <input 
+                  type="file" 
+                  id="excelFile" 
+                  accept=".xlsx" 
+                  class="block w-1/3 text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-washu-red file:text-white hover:file:bg-washu-dark-red mb-6"
+              >
 
-                        </li>
-                    </ol>
-                </div>
-                <img src="assets/Instructions.jpg" alt="insturctions" id="instructions-img">
-            </div>
-            <div id="conversion-container">
-                <input type="file" id="excelFile" accept=".xlsx" name="Excel">
-                <button type="button" id="convert-button" onclick="convertExcelToICS()">Convert to Calendar File</button>
-            </div>
+                <!-- Option 1: Google Calendar Export -->
+                <div class="p-4 border border-gray-200 mb-6 rounded-lg">
+                  <h3 class="text-lg font-semibold mb-2 text-gray-800">Option 1: Google Calendar Export</h3>
+                  <p class="text-sm text-gray-600 mb-3">Sign in with Google and export directly to your Google Calendar</p>
+                     <button 
+                        type="button" 
+                        id="google-sign-in-button"
+                        onclick="handleAuthClick()"
+                        class="px-5 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 rounded-md text-white font-medium transition-colors"
+                    >
+                        Sign in with Google
+                    </button>
 
-            <section id="buttons">
-                <button type="button" id="google-sign-in-button" onclick="handleAuthClick()">
-                    Sign in with Google to Export
-                </button>
-                <p class="no-mb" id="auth-status"></p>
+                      <p id="auth-status" class="text-sm text-gray-600 mt-2"></p>
 
-                <button type="button" id="export-button" onclick="handleExport()" style="display: none;">
-                    Export Courses to Google Calendar
-                </button>
-            </section>
+                      <button 
+                          type="button"
+                          id="export-button"
+                          onclick="handleExport()"
+                          class="hidden px-5 py-3 bg-washu-green hover:bg-washu-dark-green rounded-md text-white font-medium transition-colors"
+                      >
+                          Export to Calendar
+                      </button>
+              </div>
+
+              <!-- Option 2: Download ICS File -->
+              <div class="p-4 border border-gray-200 rounded-lg">
+                  <h3 class="text-lg font-semibold mb-2 text-gray-800">Option 2: Download ICS File</h3>
+                  <p class="text-sm text-gray-600 mb-3">Convert to an ICS file that you can import to your local calendar app</p>
+                  <button 
+                      type="button" 
+                      onclick="convertExcelToICS"
+                      class="px-4 py-3 bg-[#232323] hover:bg-black disabled:bg-gray-400 rounded-md text-white font-medium transition-colors"
+                  >
+                      Download ICS File
+                  </button>
+              </div>
+
+          </div>
+      </main>
+
+      <!-- ✅ Hidden Modal Popup -->
+    <div 
+        id="result-modal" 
+        class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden"
+    >
+        <!-- Modal content -->
+        <div class="relative bg-white rounded-lg shadow-lg p-6 max-w-md w-full text-gray-800">
+        <!-- Close button -->
+        <button 
+            type="button"
+            id="result-modal-close"
+            class="absolute top-3 right-4 text-gray-500 hover:text-gray-800 text-2xl font-bold"
+        >&times;</button>
+
+        <h3 class="text-xl font-semibold text-washu-green mb-4">
+            Export Process Completed!
+        </h3>
+
+        <p id="result-success" class="text-green-600 font-medium"></p>
+        <p id="result-skipped" class="text-yellow-600 mt-2"></p>
+        <p id="result-failed" class="mt-2"></p>
+    </div>
+    </div>
 
 
-        </main>
+      <!-- Footer -->
+    <footer class="bg-washu-dark-red px-8 py-4 text-lg text-white">
+        <h3 class="text-3xl font-semibold mb-2">About this site</h3>
+        <p class="text-sm mb-1">Not affiliated with WashU or Google.</p>
+        <p class="text-sm">Copyright © 2025</p>
+    </footer>
 
-        <footer>
-            <h1>About this site</h1>
-            <p>Not affiliated with WashU or Google.</p>
-            <p>Copyright &COPY;2025</p>
-        </footer>
-
+        <script src="calendar.js"></script>
         <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
         <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
         <script src="https://cdn.jsdelivr.net/npm/luxon@2.0.2/build/global/luxon.min.js"></script>
-        <script src="calendar.js"></script>
     </body>
 </html>

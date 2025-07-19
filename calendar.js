@@ -1,4 +1,9 @@
 /* ------------ Google API & Gobal Configuration ------------ */
+const config = {
+    CLIENT_ID: '396216549149-vfos9j1ve4g59863n4ll6drrua02f6v9.apps.googleusercontent.com',
+    DISCOVERY_DOCS: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+    SCOPES: "https://www.googleapis.com/auth/calendar.events"
+}
 
 let tokenClient;
 let gapiInited = false;
@@ -13,11 +18,10 @@ function gisLoaded() {
     tokenClient = google.accounts.oauth2.initTokenClient({
         client_id: config.CLIENT_ID,
         scope: config.SCOPES,
-        // redirect_uri: 'http://localhost:5501',
         callback: '',
     });
     gisInited = true;
-    console.log("Google Identity Services loaded.");
+    // console.debug("Google Identity Services loaded."); // DEBUG
     updateButtonVisibility();
 }
 
@@ -28,7 +32,7 @@ async function initializeGapiClient() {
             discoveryDocs: config.DISCOVERY_DOCS,
         });
         gapiInited = true;
-        console.log("Google API client loaded.");
+        // console.debug("Google API client loaded."); // DEBUG
         updateButtonVisibility();
     } catch (error) {
         console.error("Error initializing GAPI client:", error);
@@ -53,13 +57,10 @@ const WEEKDAY_MAP = {
 
 
 /* --- HTML Button Handling --- */
-let authStatusElement = document.getElementById('auth-status');
-let signInButton = document.getElementById('google-sign-in-button');
-let exportButton = document.getElementById('export-button');
+const authStatusElement = document.getElementById('auth-status');
+const signInButton = document.getElementById('google-sign-in-button');
+const exportButton = document.getElementById('export-button');
 document.addEventListener('DOMContentLoaded', () => {
-    authStatusElement = document.getElementById('auth-status');
-    signInButton = document.getElementById('google-sign-in-button');
-    exportButton = document.getElementById('export-button');
     updateButtonVisibility;}
 ); // Starting point
 
@@ -73,8 +74,9 @@ function updateButtonVisibility() {
 
     // Not signed in or APIs not fully loaded
     } else { 
+        exportButton.style.display = 'block';
         signInButton.style.display = 'block'; // Show sign-in button
-        exportButton.style.display = 'none'; // Hide export button
+        // exportButton.style.display = 'none'; // Hide export button
         authStatusElement.innerText = 'Please sign in with Google to use the calendar features.';
     }
 }
@@ -87,7 +89,7 @@ async function handleAuthClick() {
             authStatusElement.innerText = 'Sign-in failed. Please try again.';
             throw (resp);
         }
-        console.log('Authorization successful.');
+        console.debug('Authorization successful.');
         updateButtonVisibility(); // Update button visibility on successful auth
     };
 
@@ -109,28 +111,42 @@ async function handleAuthClick() {
 /* --------- Parsing Excel Files --------- */
 function parseMeetingPattern(pattern) {
     const parts = pattern.split("|").map(p => p.trim());
+    console.log(parts);
     const daysPart = parts[0] || "";
     const timePart = parts[1] || "";
-
-    // Exmaple: "URBAUER, Room 222" to "URBAUER" and "Room 222"
     const locationPart = parts[2] || "";
-    const locationParts = locationPart.split(",").map(p => p.trim());
-    const buildingPart = locationParts[0] || "";
-    const roomPart = locationParts[1] || "";
+    console.log(locationPart);
+
+    let location = "";
+    if (locationPart) {
+        // Crop room from "Room 00222" to "222"
+        const locationParts = locationPart.split(",").map(p => p.trim());
+        console.log(locationParts); // DEBUG
+        const roomPart = locationParts[1] || "";
+        console.log(roomPart); // DEBUG
+        if (roomPart) {
+            const digits = roomPart.match(/\d+/)[0];  // "Room 00222" to "00222"
+
+            console.log(digits); // DEBUG
+            const cropped = String(Number(digits)) || "";
+
+            location = locationParts[0] + " " + cropped;
+            console.log(location); // DEBUG
+        }
+
+    }
+
 
     // Days -> ["Tue","Thu"] => ["TU","TH"]
     const days = daysPart.split(/[ /]+/).filter(Boolean);
-    // console.log("days ", days); // DEBUG
     let startTime = null, endTime = null;
     if (timePart.includes("-")) {
         const [startStr, endStr] = timePart.split("-").map(s => s.trim());
 
         startTime = parseTime(startStr);
         endTime = parseTime(endStr);
-        // console.log("start time: ", startTime); // DEBUG
-        // console.log("end time: ", endTime); // DEBUG
     }
-    return { days, startTime, endTime, buildingPart, roomPart };
+    return { days, startTime, endTime, location };
 }
 
 function parseTime(string) {
@@ -156,26 +172,22 @@ async function handleExport() {
         return;
     }
 
-    if (!gapi.client.getToken()) {
-        alert('You are not signed in to Google. Please sign in first.');
-        handleAuthClick();
-        return;
-    }
+    // if (!gapi.client.getToken()) {
+    //     alert('You are not signed in to Google. Please sign in first.');
+    //     handleAuthClick();
+    //     return;
+    // }
 
     authStatusElement.innerText = 'Processing and exporting events...';
 
-    console.log("reading file"); // DEBUG
     const reader = new FileReader();
-    console.log("reader created"); // DEBUG
     reader.onload = async function (e) {
         try {
-            console.log("trying"); // DEBUG
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: "array" });
             const sheetName = workbook.SheetNames[0];
             const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
-            // console.log("SHEET: ", sheet); // DEBUG
-
+            fileInput.value = "";
             const TIMEZONE = "America/Chicago"; // St Louis time by default
             const rows = sheet.slice(3).filter(row => row.length > 8 && typeof row[8] === "string")
                 .map(row => {
@@ -196,65 +208,44 @@ async function handleExport() {
                     }
                     return row.slice(1, 12);
                 });
-            console.log("ROWS: ", rows); // DEBUG
+            // console.log("ROWS: ", rows); // DEBUG
 
             let eventsCreatedCount = 0;
             let eventsSkippedCount = 0;
             let eventsFailedCount = 0;
 
-            console.log("generating calednar"); // DEBUG
-            let count = 1;  // DEBUG
+            // console.log("generating calednar"); // DEBUG
             let colorId = 1;
             for (const row of rows) {
-                console.log("Parsing Row ", count); // DEBUG
-                count ++; // DEBUG
                 const courseName = formatCourseName(row[0]);
-                console.log("course name: ", courseName);
                 const meetingPattern = row[7];
                 const instructor = row[8];
                 const startDateRaw = row[9];
                 const endDateRaw = row[10];
 
-                console.log("startDateRaw: ", startDateRaw); // DEBUG
-                console.log("endDateRaw: ", endDateRaw); // DEBUG
                 if (!meetingPattern) {
                     eventsSkippedCount++;
                     continue;
                 }
 
-                let { days, startTime, endTime, buildingPart, roomPart } = parseMeetingPattern(meetingPattern);
+                let { days, startTime, endTime, location } = parseMeetingPattern(meetingPattern);
                 if (!days.length || !startTime || !endTime) {
                     eventsSkippedCount++;
                     continue;
                 }
-                // console.log("days length: ", days.length); // DEBUG
-                console.log("start time: ", startTime); // DEBUG
-                console.log("end time: ", endTime); // DEBUG
 
                 let startDate = luxon.DateTime.fromISO(startDateRaw, { zone: TIMEZONE });
 
-                console.log("Parsed Start Date: ", startDate.isValid ? startDate.toISO() : "Invalid");
-
                 // If the meetingDay is different from the startDay (usually a Monday due to WashU semester schedules)
-                console.log("Days from meeting pattern: ", days);
-
                 const meetingDays = days.map(day => luxon.DateTime.fromFormat(day, 'EEE').weekday);
-                console.log("Meeting Days: ", meetingDays);
-
                 const startDayOfWeek = startDate.weekday;
-                console.log("Start Day of Week: ", startDayOfWeek);
 
                 if (!meetingDays.includes(startDayOfWeek)) {
                     const dayDifference = (meetingDays[0] - startDayOfWeek + 7) % 7;  // Adjust start to the first meeting day
-                    console.log("Day Difference: ", dayDifference);
-
                     startDate = startDate.plus({ days: dayDifference });
                 }
                 days = days.map((day) => { return WEEKDAY_MAP[day]; })
                 const endDate = luxon.DateTime.fromISO(endDateRaw, { zone: TIMEZONE });
-
-                console.log("start date: ", startDate); // DEBUG
-                console.log("end date: ", endDate); // DEBUG
 
                 const startDateTime = startDate.set({
                     hour: startTime.hour,
@@ -270,8 +261,8 @@ async function handleExport() {
                     millisecond: 0
                 });
 
-                console.log("start date time: ", startDateTime.toJSDate()); // DEBUG
-                console.log("end date time: ", endDateTime.toJSDate()); // DEBUG
+                // console.log("start date time: ", startDateTime.toJSDate()); // DEBUG
+                // console.log("end date time: ", endDateTime.toJSDate()); // DEBUG
 
                 const rruleDays = days.join(",");
                 const untilDate = endDate.endOf('day');
@@ -280,18 +271,10 @@ async function handleExport() {
                 // const untilStr = untilDate.toISOString().replace(/\.\d{3}Z$/, 'Z').replace(/-/g, '').replace(/:/g, '');
                 const recurrenceRule = [`RRULE:FREQ=WEEKLY;BYDAY=${rruleDays};UNTIL=${untilStr}`];
 
-                console.log("\n");
-                console.log("Rrule days: ", rruleDays);
-                console.log("until date: ", untilDate); // DEBUG
-                console.log("until string: ", untilStr); // DEBUG
-                // console.log("course name: ", courseName); // DEBUG
-                // console.log("Description: ", instructor, " ", meetingPattern); // DEBUG
-                console.log("Location: ", buildingPart); // DEBUG
-                console.log("Reccurrence Rule: ", recurrenceRule);
                 const eventData = {
                     summary: courseName,
                     description: `Instructor: ${instructor}\nMeeting: ${meetingPattern}`,
-                    location: buildingPart,
+                    location: location,
                     start: { 
                         dateTime: startDateTime.toFormat("yyyy-MM-dd'T'HH:mm:ss"),
                         timeZone: TIMEZONE 
@@ -303,13 +286,14 @@ async function handleExport() {
                     recurrence: recurrenceRule,
                     colorId: colorId.toString(),
                 };
+
+                console.log(eventData);
                 if (colorId > 7) {
                     const message = document.createElement("p");
                     message.innerHTML = "Excuse me how many classes???";
                     if (exportButton) { exportButton.append(message); }
                 }
                 colorId = (colorId % 9) + 1;
-                console.log("Eventdata: ", eventData); // DEBUG
 
                 try {
                     await createGoogleCalendarEvent(eventData);
@@ -318,26 +302,12 @@ async function handleExport() {
                     eventsFailedCount++;
                     console.error(`Failed to create event for ${courseName}:`, error);
                 }
-                console.log('\n'); // debug
             }
-            const result = document.createElement("div");
-            result.id = "result";
-            const line1 = document.createElement("p");
-            line1.innerText = "Export process completed!";
-            const line2 = document.createElement("p");
-            line2.innerText =  `Successfully created: ${eventsCreatedCount} events.`;
-            const line3 = document.createElement("p");
-            line3.innerText =  `Skipped: ${eventsSkippedCount} events (due to missing pattern/time).`;
-            const line4 = document.createElement("p");
-            line4.innerText = `Failed: ${eventsFailedCount} events (check console for details).`;
-            result.appendChild(line1);
-            result.appendChild(line2);
-            result.appendChild(line3);
-            result.appendChild(line4);
 
-            document.querySelector("#buttons").appendChild(result);
+            showResultPopup(eventsCreatedCount, eventsSkippedCount, eventsFailedCount);
 
             authStatusElement.innerText = 'Export complete. Check your Google Calendar!';
+
         } catch (error) {
             console.error("Error during file processing or export:", error);
             alert("An error occurred during the export process. See console for details.");
@@ -383,7 +353,7 @@ async function createGoogleCalendarEvent(eventData) {
         });
 
         const response = await request;
-        console.log('Event created: %s', response.result.htmlLink);
+        // console.log('Event created: %s', response.result.htmlLink); // DEBUG
         return response.result;
     } catch (err) {
         console.error('Error creating event: ', err.message);
@@ -406,3 +376,35 @@ function formatCourseName(courseName) {
     }
     return formattedCoursName;
 }
+
+function showResultPopup(eventsCreatedCount, eventsSkippedCount, eventsFailedCount) {
+    const modal = document.getElementById("result-modal");
+    const successText = document.getElementById("result-success");
+    const skippedText = document.getElementById("result-skipped");
+    const failedText = document.getElementById("result-failed");
+
+    // Fill in result data
+    successText.textContent = `✅ Successfully created: ${eventsCreatedCount} events.`;
+    skippedText.textContent = eventsSkippedCount > 0 ? `⚠️ Skipped: ${eventsSkippedCount} events (missing pattern/time).` : 'No skipped';
+    failedText.textContent = eventsFailedCount > 0 ? `❌ Failed: ${eventsFailedCount} events (see console).` : 'No Failed';
+
+    // Style failed message dynamically
+    failedText.className = eventsFailedCount > 0 ? 
+        "text-red-600 font-medium mt-2" : 
+        "text-gray-600 mt-2";
+
+    modal.classList.remove("hidden");
+}
+
+    // ✅ Add close functionality
+document.getElementById("result-modal-close").addEventListener("click", () => {
+    document.getElementById("result-modal").classList.add("hidden");
+});
+
+    // ✅ Also close modal if clicking on backdrop
+document.getElementById("result-modal").addEventListener("click", (e) => {
+    if (e.target.id === "result-modal") {
+        e.currentTarget.classList.add("hidden");
+    }
+});
+
