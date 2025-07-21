@@ -56,22 +56,30 @@ const WEEKDAY_MAP = {
 
 
 /* --- HTML Button Handling --- */
-const authStatusElement = document.getElementById('auth-status');
-const signInButton = document.getElementById('google-sign-in-button');
-const exportButton = document.getElementById('export-button');
+let authStatusElement;
+let extractStatusElement;
+let extractSkippedReasonElement;
+let signInButton;
+let exportButton;
 document.addEventListener('DOMContentLoaded', () => {
-    updateButtonVisibility;}
-); // Starting point
+    authStatusElement = document.querySelector('#auth-status');
+    extractStatusElement = document.querySelector('#extract-status');
+    extractSkippedReasonElement = document.querySelector('#extract-skipped-reason');
+    signInButton = document.querySelector('#google-sign-in-button');
+    exportButton = document.querySelector('#export-button');
+    updateButtonVisibility();
+}); // Starting point
 
 function updateButtonVisibility() {
     // User is signed in and APIs are loaded
-    if (gapiInited && gisInited && gapi.client.getToken()) { 
-        signInButton.style.display = 'none'; // Hide sign-in button
-        exportButton.style.display = 'block'; // Show export button
-        authStatusElement.innerText = 'Signed in to Google Calendar. Ready to export!';
-        authStatusElement.style.color = "#215732";
-
-    // Not signed in or APIs not fully loaded
+    if (gapiInited && gisInited) { 
+        const token = gapi.client.getToken();
+        if (token) {
+            signInButton.style.display = 'none'; // Hide sign-in button
+            exportButton.style.display = 'block'; // Show export button
+            authStatusElement.innerText = 'Signed in to Google Calendar. Ready to export!';
+            authStatusElement.style.color = "#215732";
+        }
     } else { 
         signInButton.style.display = 'block'; // Show sign-in button
         exportButton.style.display = 'none'; // Hide export button
@@ -108,11 +116,9 @@ async function handleAuthClick() {
 /* --------- Parsing Excel Files --------- */
 function parseMeetingPattern(pattern) {
     const parts = pattern.split("|").map(p => p.trim());
-    console.log(parts);
     const daysPart = parts[0] || "";
     const timePart = parts[1] || "";
     const locationPart = parts[2] || "";
-    console.log(locationPart);
 
     let location = "";
     if (locationPart) {
@@ -156,20 +162,29 @@ function parseTime(string) {
 
 
 /* --------- MAIN LOGIC --------- */
-async function handleExport() {
+let events = [];
+async function handleExtract() {
+    // Clear previous events
+    events = [];
+    extractSkippedReasonElement.innerText = "";
+    extractStatusElement.innerText = "";
+    document.querySelector('#schedule-preview').classList.add("hidden");
+
+    // Clear the schedule preview table body if it exists
+    const previewContainer = document.querySelector('#schedule-preview');
+    const tbody = previewContainer ? previewContainer.querySelector('tbody') : null;
+    if (tbody) {
+        tbody.innerHTML = '';
+    }
+
+
     const fileInput = document.getElementById("excelFile");
     if (!fileInput.files.length) {
         alert("Please upload a file");
         return;
     }
 
-    if (!gapi.client.getToken()) {
-        alert('You are not signed in to Google. Please sign in first.');
-        handleAuthClick();
-        return;
-    }
-
-    authStatusElement.innerText = 'Processing and exporting events...';
+    // authStatusElement.innerText = 'Processing and exporting events...';
 
     const reader = new FileReader();
     reader.onload = async function (e) {
@@ -178,9 +193,9 @@ async function handleExport() {
             const workbook = XLSX.read(data, { type: "array" });
             const sheetName = workbook.SheetNames[0];
             const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
-            fileInput.value = "";
+
             const TIMEZONE = "America/Chicago"; // St Louis time by default
-            const rows = sheet.slice(3).filter(row => row.length > 8 && typeof row[8] === "string")
+            const rows = sheet.slice(3).filter(row => row.length > 8 && typeof row[2] === "number")
                 .map(row => {
                     const startDateRaw = row[10];
                     const endDateRaw = row[11];
@@ -199,28 +214,32 @@ async function handleExport() {
                     }
                     return row.slice(1, 12);
                 });
-            // console.log("ROWS: ", rows); // DEBUG
 
             let eventsCreatedCount = 0;
             let eventsSkippedCount = 0;
             let eventsFailedCount = 0;
-
+            let reasons = [];
             // console.log("generating calednar"); // DEBUG
             let colorId = 1;
             for (const row of rows) {
+                if (!row[0]) {
+                    eventsSkippedCount++;
+                    reasons.push("No course name");
+                    continue;
+                }
                 const courseName = formatCourseName(row[0]);
+
+                if (!row[7]) {
+                    eventsSkippedCount++;
+                    reasons.push("No meeting pattern");
+                    continue;
+                }
                 const meetingPattern = row[7];
-                const instructor = row[8];
                 const startDateRaw = row[9];
                 const endDateRaw = row[10];
 
-                if (!meetingPattern) {
-                    eventsSkippedCount++;
-                    continue;
-                }
-
                 let { days, startTime, endTime, location } = parseMeetingPattern(meetingPattern);
-                if (!days.length || !startTime || !endTime) {
+                if (!days.length || !startTime || !endTime) { // Skip if no days, start time, or end time
                     eventsSkippedCount++;
                     continue;
                 }
@@ -245,7 +264,7 @@ async function handleExport() {
                     millisecond: 0
                 });
 
-                const endDateTime = startDate.set({
+                const endDateTime = startDate.set({ // Not a bug here; endDateTime refers to the end time of the event on its first occurrence
                     hour: endTime.hour,
                     minute: endTime.minute,
                     second: 0,
@@ -264,7 +283,6 @@ async function handleExport() {
 
                 const eventData = {
                     summary: courseName,
-                    description: `Instructor: ${instructor}\nMeeting: ${meetingPattern}`,
                     location: location,
                     start: { 
                         dateTime: startDateTime.toFormat("yyyy-MM-dd'T'HH:mm:ss"),
@@ -278,47 +296,100 @@ async function handleExport() {
                     colorId: colorId.toString(),
                 };
 
-                console.log(eventData);
+                // console.log(eventData); // DEBUG
                 if (colorId > 7) {
                     const message = document.createElement("p");
                     message.innerHTML = "Excuse me how many classes???";
-                    if (exportButton) { exportButton.append(message); }
+                    if (extractStatusElement) { extractStatusElement.append(message); }
                 }
-                colorId = (colorId % 9) + 1;
+                colorId = (colorId % 11) + 1;
 
-                try {
-                    await createGoogleCalendarEvent(eventData);
-                    eventsCreatedCount++;
-                } catch (error) {
-                    eventsFailedCount++;
-                    console.error(`Failed to create event for ${courseName}:`, error);
-                }
+                events.push(eventData);
             }
 
-            showResultPopup(eventsCreatedCount, eventsSkippedCount, eventsFailedCount);
-
-            authStatusElement.innerText = 'Export complete. Check your Google Calendar!';
-
+            if (events.length > 0) {
+                extractStatusElement.innerText = 'Extraction complete. Verify your schedule!';
+                if (eventsSkippedCount > 0) {
+                    extractSkippedReasonElement.innerText = `${eventsSkippedCount} events skipped due to: "${reasons.join(", ")}"`;
+                    eventsSkippedCount = 0;
+                    reasons = [];
+                }
+                renderSchedulePreview();
+            } else {
+                extractStatusElement.innerText = 'No events extracted. Please check your file and try again.';
+                reasons = [];
+            }
+            // console.log(events); // DEBUG
         } catch (error) {
             console.error("Error during file processing or export:", error);
             alert("An error occurred during the export process. See console for details.");
-            authStatusElement.innerText = 'An error occurred during export.';
+            extractStatusElement.innerText = 'An error occurred during export.';
         }
     };
     reader.readAsArrayBuffer(fileInput.files[0]);
 }
 
-
+function generateICS(events) {
+    let icsContent = `BEGIN:VCALENDAR
+    VERSION:2.0
+    CALSCALE:GREGORIAN
+    PRODID:-//Workday2Calendar//EN
+    `;
+}
 
 
 
 /* --------- Google Calendar Event Handling --------- */
+async function handleGoogleExport() {
+    try {
+        extractStatusElement.innerText = '';
+        let eventsCreatedCount = 0;
+        let eventsFailedCount = 0;
+
+        if (!gapi.client.getToken()) {
+            alert('You are not signed in to Google. Please sign in first.');
+            handleAuthClick();
+            return;
+        }
+
+        if (events.length === 0) {
+            alert('No events to export. Please upload a file first.');
+            return;
+        }
+
+        authStatusElement.innerText = 'Processing and exporting events...';
+        for (const event of events) {
+            try {
+                await createGoogleCalendarEvent(event);
+                eventsCreatedCount++;
+            } catch (error) {
+                eventsFailedCount++;
+                console.error('Error creating event: ', error.message);
+            }
+        }
+        authStatusElement.innerText = 'Events exported successfully!';
+        document.getElementById("excelFile").value = ""; // Clear the file input
+        // Clear and hide the schedule preview
+        events = [];
+        const previewContainer = document.querySelector('#schedule-preview');
+        if (previewContainer) {
+            const tbody = previewContainer.querySelector('tbody');
+            if (tbody) tbody.innerHTML = '';
+            previewContainer.classList.add("hidden");
+        }
+        showResultPopup(eventsCreatedCount, eventsFailedCount);
+    } catch (error) {
+        console.error("Error during Google export:", error);
+        authStatusElement.innerText = 'An error occurred during export to Google Calendar.';
+    }
+}
+
 /** 
  * --- New function to create a Google Calendar event ---
  * @param {*} eventData: 
  * */ 
 async function createGoogleCalendarEvent(eventData) {
-    const { summary, description, location, start, end, recurrence, colorId } = eventData;
+    const { summary, location, start, end, recurrence, colorId } = eventData;
 
     // The 'start' and 'end' objects contain 'dateTime' and 'timeZone'.
     // Example: { "dateTime": "2025-07-20T10:00:00-05:00", "timeZone": "America/Chicago" }
@@ -326,7 +397,6 @@ async function createGoogleCalendarEvent(eventData) {
     const event = {
         'summary': summary,
         'location': location,
-        'description': description,
         'start': start,
         'end': end,
         'recurrence': recurrence,
@@ -351,7 +421,6 @@ async function createGoogleCalendarEvent(eventData) {
     }
 }
 
-
 /* --------- Helper Functions --------- */
 function formatCourseName(courseName) {
     const parts = courseName.split(' - ');
@@ -367,15 +436,18 @@ function formatCourseName(courseName) {
     return formattedCoursName;
 }
 
-function showResultPopup(eventsCreatedCount, eventsSkippedCount, eventsFailedCount) {
-    const modal = document.getElementById("result-modal");
-    const successText = document.getElementById("result-success");
-    const skippedText = document.getElementById("result-skipped");
-    const failedText = document.getElementById("result-failed");
+function showResultPopup(eventsCreatedCount, eventsFailedCount) {
+    const modal = document.querySelector("#result-modal");
+    const successText = document.querySelector("#result-success");
+    const failedText = document.querySelector("#result-failed");
+    
+    if (!modal || !successText || !failedText) {
+        console.error("Result popup elements not found");
+        return;
+    }
 
     // Fill in result data
     successText.textContent = `✅ Successfully created: ${eventsCreatedCount} events.`;
-    skippedText.textContent = eventsSkippedCount > 0 ? `⚠️ Skipped: ${eventsSkippedCount} events (missing pattern/time).` : 'No skipped';
     failedText.textContent = eventsFailedCount > 0 ? `❌ Failed: ${eventsFailedCount} events (see console).` : 'No Failed';
 
     // Style failed message dynamically
@@ -387,14 +459,232 @@ function showResultPopup(eventsCreatedCount, eventsSkippedCount, eventsFailedCou
 }
 
     // Add close functionality
-document.getElementById("result-modal-close").addEventListener("click", () => {
-    document.getElementById("result-modal").classList.add("hidden");
+document.querySelector("#result-modal-close").addEventListener("click", () => {
+    document.querySelector("#result-modal").classList.add("hidden");
 });
 
     // Also close modal if clicking on backdrop
-document.getElementById("result-modal").addEventListener("click", (e) => {
+document.querySelector("#result-modal").addEventListener("click", (e) => {
     if (e.target.id === "result-modal") {
         e.currentTarget.classList.add("hidden");
     }
 });
 
+
+let editingCell = null; // { idx: number, field: string } or null
+function renderSchedulePreview() {
+    try {
+        const previewContainer = document.querySelector('#schedule-preview');
+        const tbody = previewContainer ? previewContainer.querySelector('tbody') : null;
+        if (!previewContainer || !tbody) throw new Error("Preview container or table body not found");
+
+        previewContainer.classList.remove('hidden');
+
+        if (!events.length) { // No events extracted
+            tbody.innerHTML = '<tr><td colspan="4" class="text-gray-500">No events extracted.</td></tr>';
+            return;
+        }
+
+        let html = '';
+        events.forEach((event, idx) => {
+            html += '<tr>';
+    
+            // 1. Course Name Display & Edit
+            html += renderEditableCell({
+                idx,
+                field: 'summary',
+                editingCell,
+                value: event.summary
+              });
+    
+            // 2. Days Display & Edit
+            const days = event.recurrence ? event.recurrence[0].match(/BYDAY=([^;]+)/)?.[1] : '';
+            html += renderEditableCell({
+                idx,
+                field: 'days',
+                editingCell,
+                value: days
+            });
+    
+            // 3. Time Display & Edit
+            const start = event.start.dateTime.slice(11, 16);
+            const end = event.end.dateTime.slice(11, 16);
+            const isEditingTime = editingCell && editingCell.idx === idx && editingCell.field === 'time';
+
+            // if (editingCell && editingCell.idx === idx && editingCell.field === 'time') {
+            //     html += `<td class="px-2 py-1 w-1/4 flex gap-1 items-center">
+            //         <input type="time" id="edit-start-${idx}" value="${start}"
+            //             class="border border-gray-300 focus:ring-2 focus:ring-washu-red/50 rounded-lg px-2 py-1 bg-white outline-none transition-shadow"
+            //             autofocus
+            //         >
+            //         <span>-</span>
+            //         <input type="time" id="edit-end-${idx}" value="${end}"
+            //             class="border border-gray-300 focus:ring-2 focus:ring-washu-red/50 rounded-lg px-2 py-1 bg-white outline-none transition-shadow"
+            //         >
+            //     </td>`;
+            // } else {
+            //     html += `<td class="px-2 py-1 cursor-pointer" onclick="editCell(${idx}, 'time')">${start} - ${end}</td>`;
+            // }
+            if (isEditingTime) {
+                html += `
+                  <td class="px-2 py-1 w-1/4 flex gap-1 items-center">
+                    <input type="time" id="edit-start-${idx}" value="${start}"
+                        class="border border-gray-300 focus:ring-2 focus:ring-washu-red/50 rounded-lg px-2 py-1 bg-white outline-none transition-shadow" autofocus>
+                    <span>-</span>
+                    <input type="time" id="edit-end-${idx}" value="${end}"
+                        class="border border-gray-300 focus:ring-2 focus:ring-washu-red/50 rounded-lg px-2 py-1 bg-white outline-none transition-shadow">
+                  </td>`;
+            } else {
+                html += renderEditableCell({
+                    idx,
+                    field: 'time',
+                    editingCell,
+                    value: `${start} - ${end}`
+                });
+            }
+    
+            // 4. Location Display & Edit
+            html += renderEditableCell({
+                idx,
+                field: 'location',
+                editingCell,
+                value: event.location
+            });
+    
+            html += '</tr>';
+        });
+        tbody.innerHTML = html;
+    } catch (error) {
+        console.error("Error rendering schedule preview:", error);
+        return;
+    }
+
+
+
+
+    // Add event listeners for save/cancel on input fields
+    if (editingCell) {
+        let inputIds = [];
+        if (editingCell.field === 'summary') inputIds = [`edit-summary-${editingCell.idx}`];
+        if (editingCell.field === 'days') inputIds = [`edit-days-${editingCell.idx}`];
+        if (editingCell.field === 'time') inputIds = [`edit-start-${editingCell.idx}`, `edit-end-${editingCell.idx}`];
+        if (editingCell.field === 'location') inputIds = [`edit-location-${editingCell.idx}`];
+
+        inputIds.forEach(id => {
+            const input = document.getElementById(id);
+            if (input) {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') saveCell(editingCell.idx, editingCell.field);
+                    if (e.key === 'Escape') cancelEdit();
+                });
+                input.addEventListener('blur', () => {
+                    // Use setTimeout to allow Enter to fire before blur
+                    if (inputIds.length) {
+                        setTimeout(() => {
+                            if (document.activeElement !== input) saveCell(editingCell.idx, editingCell.field);
+                        }, 0);
+                    }
+                });
+            }
+        });
+        // Focus the first input
+        if (inputIds.length) {
+            setTimeout(() => {
+                const input = document.getElementById(inputIds[0]);
+                if (input) input.focus();
+            }, 0);
+        }
+    }
+}
+
+function editCell(idx, field) {
+    editingCell = { idx, field };
+    renderSchedulePreview();
+}
+
+function cancelEdit() {
+    editingCell = null;
+    renderSchedulePreview();
+}
+
+function saveCell(idx, field) {
+    if (field === 'summary') {
+        const input = document.querySelector(`#edit-summary-${idx}`);
+        if (input) events[idx].summary = input.value;
+    } else if (field === 'days') {
+        const input = document.querySelector(`#edit-days-${idx}`);
+        if (input) {
+            const untilMatch = events[idx].recurrence[0].match(/UNTIL=([^;]+)/);
+            const until = untilMatch ? untilMatch[1] : '';
+            events[idx].recurrence = [`RRULE:FREQ=WEEKLY;BYDAY=${input.value};UNTIL=${until}`];
+        }
+    } else if (field === 'time') {
+        const startInput = document.querySelector(`#edit-start-${idx}`);
+        const endInput = document.querySelector(`#edit-end-${idx}`);
+        if (startInput && endInput) {
+            const date = events[idx].start.dateTime.slice(0, 10);
+            events[idx].start.dateTime = `${date}T${startInput.value}:00`;
+            events[idx].end.dateTime = `${date}T${endInput.value}:00`;
+        }
+    } else if (field === 'location') {
+        const input = document.querySelector(`#edit-location-${idx}`);
+        if (input) events[idx].location = input.value;
+    }
+    editingCell = null;
+    renderSchedulePreview();
+}
+
+/**
+ * @param {Object} param0
+    * @param {number} param0.idx: The index of the cell to edit
+    * @param {string} param0.field: The field to edit
+    * @param {Object} param0.editingCell: The current editing cell
+    * @param {string} param0.value: The value of the cell
+    * @param {string} param0.placeholder: The placeholder for the input
+    * @param {string} param0.type: The type of the input
+    * @param {string} param0.extraClasses: Extra classes for the td
+    * @param {function} param0.parseDisplay: A function to parse the value for display
+ */
+function renderEditableCell({ 
+    idx, 
+    field, 
+    editingCell, 
+    value, 
+    placeholder = '', 
+    type = 'text', 
+    extraClasses = '', 
+    parseDisplay = v => v // Optional formatter for display mode
+  }) {
+    const isEditing = editingCell && editingCell.idx === idx && editingCell.field === field;
+  
+    if (isEditing) {
+      return `
+        <td class="px-2 py-1 ${extraClasses}">
+          <input 
+            type="${type}" 
+            id="edit-${field}-${idx}" 
+            value="${value || ''}"
+            placeholder="${placeholder}"
+            class="border border-washu-red focus:ring-2 focus:ring-washu-red/50 rounded-lg px-2 py-1 w-full bg-white outline-none transition-shadow"
+            autofocus
+          >
+        </td>
+      `;
+    } else {
+      return `
+        <td 
+          class="px-2 py-1 group cursor-pointer transition relative ${extraClasses}" 
+          onclick="editCell(${idx}, '${field}')"
+        >
+          <span class="group-hover:bg-gray-100 group-hover:border group-hover:border-washu-red group-hover:shadow-sm rounded px-1 py-0.5 transition">
+            ${parseDisplay(value) || ''}
+          </span>
+        </td>
+      `;
+    }
+  }
+  
+// Expose to window
+window.editCell = editCell;
+window.saveCell = saveCell;
+window.cancelEdit = cancelEdit;

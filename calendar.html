@@ -30,7 +30,6 @@
                 },
             };
         </script>
-        <link rel="stylesheet" href="calendar.css">
     </head>
     <body class="min-h-screen flex flex-col justify-between font-roboto">
       <header class="bg-washu-red px-8 text-white text-xl">
@@ -43,7 +42,7 @@
             <h2 class="text-3xl font-bold mb-4">Instructions:</h2>
             <ol class="space-y-3 list-decimal pl-8">
               <li>
-                Go to your <b>Current Classes</b> page on
+                Open
                 <a 
                   href="https://www.myworkday.com/wustl/" 
                   target="_blank" 
@@ -52,20 +51,23 @@
                 >
                 Workday
                 </a>
+                and navigate to your <b>"Current Classes"</b> page
               </li>
-              <li>Click <b>Export to Excel</b> and download the exported file</li>
+              <li>Click <b>
+                Export to Excel</b> and download the exported file</li>
               <li>Upload the downloaded file below</li>
+              <li>Click <b>Extract Calendar Info</b> to generate your class events and review them for accuracy</li>
               <li>
-                After upload, you can choose to either:
+                Once you&apos;ve confirmed the events, you can choose to either:
                 <ul class="list-disc ml-6 mt-2 space-y-1">
                   <li>
                     <span class="">
-                      sign in &amp; export directly to google calendar
+                      Sign in &amp; export directly to google calendar, or
                     </span>
                   </li>
                   <li>
                     <span class="">
-                      convert to an <strong>ICS file</strong> that you can import to your local calendar
+                      convert to an <strong>ICS file</strong> that you can import to your preferred calendar app
                     </span>
                   </li>
                 </ul>
@@ -86,9 +88,35 @@
               <input 
                   type="file" 
                   id="excelFile" 
-                  accept=".xlsx" 
-                  class="block w-1/3 text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-washu-red file:text-white hover:file:bg-washu-dark-red mb-6"
+                  accept=".xlsx"
+                  onchange="handleExtract()"
+                  class="block w-1/3 text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-washu-red file:text-white hover:file:bg-washu-dark-red"
               >
+              <p id="extract-status" class="mt-1"></p>
+              <p id="extract-skipped-reason" class="mb-6 text-yellow-600"></p>
+
+              <!-- Schedule Preview -->
+              <div id="schedule-preview" class="p-4 border border-gray-200 mb-6 hidden rounded-lg">
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">Confirm Your Schedule</h3>
+                <p class="text-sm text-gray-600 mb-3">
+                  Google Calendar only accepts event names with a max of 50 characters, so course titles may be cropped.
+                  You can click on the course names to edit them.
+                </p>
+                <table class="min-w-full text-sm text-left">
+                  <thead>
+                      <tr>
+                          <th class="px-2 py-1">Course</th>
+                          <th class="px-2 py-1">Days</th>
+                          <th class="px-2 py-1">Time</th>
+                          <th class="px-2 py-1">Location</th>
+                          <!-- <th class="px-2 py-1">Edit</th> -->
+                      </tr>
+                  </thead>
+                  <tbody>
+                  </tbody>
+                </table>
+              </div>
+
 
                 <!-- Option 1: Google Calendar Export -->
                 <div class="p-4 border border-gray-200 mb-6 rounded-lg">
@@ -108,7 +136,7 @@
                       <button 
                           type="button"
                           id="export-button"
-                          onclick="handleExport()"
+                          onclick="handleGoogleExport()"
                           class="hidden px-5 py-3 bg-washu-green hover:bg-washu-dark-green rounded-md text-white font-medium transition-colors"
                       >
                           Export to Calendar
@@ -118,7 +146,7 @@
               <!-- Option 2: Download ICS File -->
               <div class="p-4 border border-gray-200 rounded-lg">
                   <h3 class="text-lg font-semibold mb-2 text-gray-500">Option 2: Download ICS File</h3>
-                  <p class="text-sm text-gray-500 mb-3"> <i>This feature is coming soon—thank you for your patience!</i></p>
+                  <p class="text-sm text-gray-500 mb-3"> <i>This feature is coming soon—please wait!</i></p>
                   <p class="text-sm text-gray-500 mb-3">Convert to an ICS file that you can import to your local calendar app</p>
                   <button 
                       type="button" 
@@ -152,7 +180,6 @@
         </h3>
 
         <p id="result-success" class="text-green-600 font-medium"></p>
-        <p id="result-skipped" class="text-yellow-600 mt-2"></p>
         <p id="result-failed" class="mt-2"></p>
     </div>
     </div>
