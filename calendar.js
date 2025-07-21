@@ -494,7 +494,8 @@ function renderSchedulePreview() {
                 idx,
                 field: 'summary',
                 editingCell,
-                value: event.summary
+                value: event.summary,
+                maxlength: "50"
               });
     
             // 2. Days Display & Edit
@@ -511,20 +512,6 @@ function renderSchedulePreview() {
             const end = event.end.dateTime.slice(11, 16);
             const isEditingTime = editingCell && editingCell.idx === idx && editingCell.field === 'time';
 
-            // if (editingCell && editingCell.idx === idx && editingCell.field === 'time') {
-            //     html += `<td class="px-2 py-1 w-1/4 flex gap-1 items-center">
-            //         <input type="time" id="edit-start-${idx}" value="${start}"
-            //             class="border border-gray-300 focus:ring-2 focus:ring-washu-red/50 rounded-lg px-2 py-1 bg-white outline-none transition-shadow"
-            //             autofocus
-            //         >
-            //         <span>-</span>
-            //         <input type="time" id="edit-end-${idx}" value="${end}"
-            //             class="border border-gray-300 focus:ring-2 focus:ring-washu-red/50 rounded-lg px-2 py-1 bg-white outline-none transition-shadow"
-            //         >
-            //     </td>`;
-            // } else {
-            //     html += `<td class="px-2 py-1 cursor-pointer" onclick="editCell(${idx}, 'time')">${start} - ${end}</td>`;
-            // }
             if (isEditingTime) {
                 html += `
                   <td class="px-2 py-1 w-1/4 flex gap-1 items-center">
@@ -653,6 +640,7 @@ function renderEditableCell({
     placeholder = '', 
     type = 'text', 
     extraClasses = '', 
+    maxlength= '',
     parseDisplay = v => v // Optional formatter for display mode
   }) {
     const isEditing = editingCell && editingCell.idx === idx && editingCell.field === field;
@@ -667,6 +655,7 @@ function renderEditableCell({
             placeholder="${placeholder}"
             class="border border-washu-red focus:ring-2 focus:ring-washu-red/50 rounded-lg px-2 py-1 w-full bg-white outline-none transition-shadow"
             autofocus
+            maxlength = ${maxlength}
           >
         </td>
       `;
