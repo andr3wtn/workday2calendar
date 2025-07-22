@@ -184,8 +184,6 @@ async function handleExtract() {
         return;
     }
 
-    // authStatusElement.innerText = 'Processing and exporting events...';
-
     const reader = new FileReader();
     reader.onload = async function (e) {
         try {
@@ -357,7 +355,7 @@ async function handleGoogleExport() {
             return;
         }
 
-        authStatusElement.innerText = 'Processing and exporting events...';
+        authStatusElement.innerText = 'Processing and exporting events... Please wait';
         for (const event of events) {
             try {
                 await createGoogleCalendarEvent(event);
