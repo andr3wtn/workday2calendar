@@ -355,7 +355,8 @@ async function handleGoogleExport() {
             return;
         }
 
-        authStatusElement.innerText = 'Processing and exporting events... Please wait';
+        authStatusElement.innerText = 'Processing and exporting events. Please wait';
+        authStatusElement.classList.add('text-lg', 'animate-pulse', 'font-semibold');
         for (const event of events) {
             try {
                 await createGoogleCalendarEvent(event);
@@ -366,6 +367,7 @@ async function handleGoogleExport() {
             }
         }
         authStatusElement.innerText = 'Events exported successfully!';
+        authStatusElement.classList.remove('text-lg', 'animate-pulse', 'font-semibold');
         document.getElementById("excelFile").value = ""; // Clear the file input
         // Clear and hide the schedule preview
         events = [];
@@ -378,7 +380,9 @@ async function handleGoogleExport() {
         showResultPopup(eventsCreatedCount, eventsFailedCount);
     } catch (error) {
         console.error("Error during Google export:", error);
+        authStatusElement.classList.remove('text-lg', 'animate-pulse', 'font-semibold');
         authStatusElement.innerText = 'An error occurred during export to Google Calendar.';
+        
     }
 }
 
