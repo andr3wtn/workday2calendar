@@ -506,7 +506,7 @@ function renderSchedulePreview() {
                 idx,
                 field: 'days',
                 editingCell,
-                value: days
+                value: days,
             });
     
             // 3. Time Display & Edit
@@ -647,7 +647,7 @@ function renderEditableCell({
   }) {
     const isEditing = editingCell && editingCell.idx === idx && editingCell.field === field;
   
-    if (isEditing) {
+    if (isEditing) { // editing mode
       return `
         <td class="px-2 py-1 ${extraClasses}">
           <input 
@@ -661,7 +661,7 @@ function renderEditableCell({
           >
         </td>
       `;
-    } else {
+    } else { // display mode
       return `
         <td 
           class="px-2 py-1 group cursor-pointer transition relative ${extraClasses}" 
