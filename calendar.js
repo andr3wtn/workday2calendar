@@ -133,7 +133,6 @@ function parseMeetingPattern(pattern) {
 
     }
 
-
     // Days -> ["Tue","Thu"] => ["TU","TH"]
     const days = daysPart.split(/[ /]+/).filter(Boolean);
     let startTime = null, endTime = null;
@@ -190,13 +189,14 @@ async function handleExtract() {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: "array" });
             const sheetName = workbook.SheetNames[0];
-            const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
+            const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, blankrows: false, defval: "" });
 
-            const TIMEZONE = "America/Chicago"; // St Louis time by default
-            const rows = sheet.slice(3).filter(row => row.length > 8 && typeof row[2] === "number")
+            const TIMEZONE = "America/Chicago"; // Central time by default
+
+            const rows = sheet.slice(3).filter(row => row.length > 13 && typeof row[4] === "number")
                 .map(row => {
-                    const startDateRaw = row[10];
-                    const endDateRaw = row[11];
+                    const startDateRaw = row[12];
+                    const endDateRaw = row[13];
                     if (typeof startDateRaw === "number" && typeof endDateRaw === "number") {
                         const startDate = new Date(1900, 0, startDateRaw + 1);
                         startDate.setDate(startDate.getDate() - 1);
@@ -207,15 +207,13 @@ async function handleExtract() {
                         const endDateInZone = luxon.DateTime.fromJSDate(endDate, { zone: TIMEZONE }).toISO();  // Convert and format to ISO string
 
                         // Update the row with timezone-converted dates
-                        row[10] = startDateInZone;
-                        row[11] = endDateInZone;
+                        row[12] = startDateInZone;
+                        row[13] = endDateInZone;
                     }
-                    return row.slice(1, 12);
+                    return row.slice(1, 14);
                 });
-
-            let eventsCreatedCount = 0;
+            console.log(rows);
             let eventsSkippedCount = 0;
-            let eventsFailedCount = 0;
             let reasons = [];
             // console.log("generating calednar"); // DEBUG
             let colorId = 1;
@@ -227,14 +225,14 @@ async function handleExtract() {
                 }
                 const courseName = formatCourseName(row[0]);
 
-                if (!row[7]) {
+                if (!row[9]) {
                     eventsSkippedCount++;
                     reasons.push("No meeting pattern");
                     continue;
                 }
-                const meetingPattern = row[7];
-                const startDateRaw = row[9];
-                const endDateRaw = row[10];
+                const meetingPattern = row[9];
+                const startDateRaw = row[11];
+                const endDateRaw = row[12];
 
                 let { days, startTime, endTime, location } = parseMeetingPattern(meetingPattern);
                 if (!days.length || !startTime || !endTime) { // Skip if no days, start time, or end time
@@ -295,7 +293,7 @@ async function handleExtract() {
                 };
 
                 // console.log(eventData); // DEBUG
-                if (colorId > 7) {
+                if (colorId > 12) {
                     const message = document.createElement("p");
                     message.innerHTML = "Excuse me how many classes???";
                     if (extractStatusElement) { extractStatusElement.append(message); }
