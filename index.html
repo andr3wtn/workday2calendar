@@ -52,7 +52,7 @@
       </header>
 
       <main class="flex-1 text-gray-900 p-8">
-          <p class="text-red-500">Sorry, this page is currently not working and being fixed.</p>
+          <p class="text-center text-red-500">Sorry, this page is currently not working and being fixed.</p>
 
         <!-- Upload Card -->
         <div class="bg-washu-red/5 border-2 border-washu-red rounded-xl shadow-lg px-8 py-10 max-w-3xl mx-auto mb-8 flex flex-col items-center">
@@ -66,6 +66,7 @@
               file:py-3 file:px-6 file:rounded-full file:border-0 file:text-lg 
               file:font-semibold file:bg-washu-red file:text-white hover:file:bg-washu-dark-red 
               focus:outline-none focus:ring-2 focus:ring-washu-red rounded-full"
+                disabled
             >
             <button 
               type="button" 
@@ -120,6 +121,7 @@
                 type="button"
                 id="export-button"
                 onclick="handleGoogleExport()"
+                disabled
                 class="hidden px-5 py-3 bg-washu-green hover:bg-washu-dark-green hover:scale-105 transition rounded-xl text-white font-medium transition-colors"
             >
                 Export to Calendar
